@@ -42,7 +42,7 @@ namespace AttendanceWithQrCodes.Controllers
         }
 
         /// <summary>
-        /// Returns study profile by id.
+        /// Returns study languages by id.
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
