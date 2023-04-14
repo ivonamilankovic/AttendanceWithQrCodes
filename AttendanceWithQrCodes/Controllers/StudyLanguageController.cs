@@ -1,11 +1,11 @@
 ﻿using AttendanceWithQrCodes.Data;
-using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
+using AttendanceWithQrCodes.Models;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using System.Net.Mime;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Net.Mime;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -13,18 +13,18 @@ namespace AttendanceWithQrCodes.Controllers
     [Produces(MediaTypeNames.Application.Json)]
     [Consumes(MediaTypeNames.Application.Json)]
     [ApiController]
-    public class StudyProfileController : ControllerBase
+    public class StudyLanguageController : ControllerBase
     {
         private readonly Context _context;
         private readonly IMapper _mapper;
-        public StudyProfileController(Context context, IMapper mapper)
+        public StudyLanguageController(Context context, IMapper mapper)
         {
             _context = context;
             _mapper = mapper;
         }
 
         /// <summary>
-        /// Returns list of study profiles.
+        /// Returns list of study languages.
         /// </summary>
         /// <returns></returns>
         [HttpGet]
@@ -32,17 +32,17 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll()
         {
-            IList<StudyProfile> profiles = await _context.StudyProfiles.ToListAsync();
-            if (!profiles.Any())
+            IList<StudyLanguage> langs = await _context.StudyLanguages.ToListAsync();
+            if (!langs.Any())
             {
                 return NoContent();
             }
 
-            return Ok(profiles);
+            return Ok(langs);
         }
 
         /// <summary>
-        /// Returns study profile by id.
+        /// Returns study languages by id.
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -51,81 +51,81 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(int id)
         {
-            StudyProfile? profile = await _context.StudyProfiles.SingleOrDefaultAsync(p => p.Id == id);
-            if(profile == null)
+            StudyLanguage? lang = await _context.StudyLanguages.SingleOrDefaultAsync(l => l.Id == id);
+            if (lang == null)
             {
                 return NotFound();
             }
 
-            StudyProfileDto profileDto = _mapper.Map<StudyProfile, StudyProfileDto>(profile);
-            return Ok(profileDto);
+            StudyLanguageDto langDto = _mapper.Map<StudyLanguage, StudyLanguageDto>(lang);
+            return Ok(langDto);
         }
 
         /// <summary>
-        /// Creates new study profile.
+        /// Creates new study language.
         /// </summary>
-        /// <param name="profileDto"></param>
+        /// <param name="langDto"></param>
         /// <returns></returns>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Create(StudyProfileDto profileDto)
+        public async Task<IActionResult> Create(StudyLanguageDto langDto)
         {
-            if (profileDto.ProfileName.IsNullOrEmpty())
+            if (langDto.LanguageName.IsNullOrEmpty())
             {
                 return BadRequest();
             }
 
-            bool profileExists = await _context.StudyProfiles.AnyAsync(p => p.Name == profileDto.ProfileName);
-            if (profileExists)
+            bool langExists = await _context.StudyLanguages.AnyAsync(l => l.Name == langDto.LanguageName);
+            if (langExists)
             {
-                return BadRequest("Profile already exists!");
+                return BadRequest("Language already exists!");
             }
 
-            StudyProfile profile = _mapper.Map<StudyProfileDto, StudyProfile>(profileDto);
-            _context.StudyProfiles.Add(profile);
+            StudyLanguage lang = _mapper.Map<StudyLanguageDto, StudyLanguage>(langDto);
+            _context.StudyLanguages.Add(lang);
             await _context.SaveChangesAsync();
 
-            return Ok(profile);
+            return Ok(lang);
         }
 
         /// <summary>
-        /// Updates study profile by id.
+        /// Updates study language by id.
         /// </summary>
         /// <param name="id"></param>
-        /// <param name="profileDto"></param>
+        /// <param name="langDto"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Update(int id, StudyProfileDto profileDto)
+        public async Task<IActionResult> Update(int id, StudyLanguageDto langDto)
         {
-            if (profileDto.ProfileName.IsNullOrEmpty())
+            if (langDto.LanguageName.IsNullOrEmpty())
             {
                 return BadRequest();
             }
 
-            bool profileExists = await _context.StudyProfiles.AnyAsync(p => p.Name == profileDto.ProfileName && p.Id != id);
-            if (profileExists)
+            bool langExists = await _context.StudyLanguages.AnyAsync(l => l.Name == langDto.LanguageName && l.Id != id);
+            if (langExists)
             {
-                return BadRequest("Profile already exists!");
+                return BadRequest("Language already exists!");
             }
 
-            StudyProfile? profile = await _context.StudyProfiles.SingleOrDefaultAsync(p => p.Id == id);
-            if (profile == null)
+            StudyLanguage? lang = await _context.StudyLanguages.SingleOrDefaultAsync(l => l.Id == id);
+            if (lang == null)
             {
                 return NotFound();
             }
 
-            _mapper.Map(profileDto, profile);
+            _mapper.Map(langDto, lang);
             await _context.SaveChangesAsync();
 
-            return Ok(profile);
+            return Ok(lang);
         }
 
         /// <summary>
-        /// Deletes study profile by id.
+        /// Deletes study language by id.
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -134,17 +134,16 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)
         {
-            StudyProfile? profile = await _context.StudyProfiles.SingleOrDefaultAsync(p => p.Id == id);
-            if(profile == null)
+            StudyLanguage? lang = await _context.StudyLanguages.SingleOrDefaultAsync(l => l.Id == id); ;
+            if (lang == null)
             {
                 return NotFound();
             }
 
-            _context.StudyProfiles.Remove(profile);
+            _context.StudyLanguages.Remove(lang);
             await _context.SaveChangesAsync();
 
             return Ok();
         }
-
     }
 }
