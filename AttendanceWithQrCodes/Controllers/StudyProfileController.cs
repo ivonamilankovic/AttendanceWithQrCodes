@@ -28,6 +28,8 @@ namespace AttendanceWithQrCodes.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll()
         {
             IList<StudyProfile> profiles = await _context.StudyProfiles.ToListAsync();
@@ -45,6 +47,8 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(int id)
         {
             StudyProfile? profile = await _context.StudyProfiles.SingleOrDefaultAsync(p => p.Id == id);
@@ -63,6 +67,8 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="profileDto"></param>
         /// <returns></returns>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Create(StudyProfileDto profileDto)
         {
             if (profileDto.ProfileName.IsNullOrEmpty())
@@ -84,6 +90,9 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="profileDto"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(int id, StudyProfileDto profileDto)
         {
             if (profileDto.ProfileName.IsNullOrEmpty())
@@ -94,7 +103,7 @@ namespace AttendanceWithQrCodes.Controllers
             StudyProfile? profile = await _context.StudyProfiles.SingleOrDefaultAsync(p => p.Id == id);
             if (profile == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
             _mapper.Map(profileDto, profile);
@@ -109,12 +118,14 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)
         {
             StudyProfile? profile = await _context.StudyProfiles.SingleOrDefaultAsync(p => p.Id == id);
             if(profile == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
             _context.StudyProfiles.Remove(profile);
