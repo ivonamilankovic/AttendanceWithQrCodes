@@ -6,6 +6,7 @@ namespace AttendanceWithQrCodes.Models
     public class StudentInformation
     {
         [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int Index { get; set; }
         [Required]
         public string MacAddress { get; set; } = default!;
