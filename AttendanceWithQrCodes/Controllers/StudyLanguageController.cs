@@ -76,6 +76,12 @@ namespace AttendanceWithQrCodes.Controllers
                 return BadRequest();
             }
 
+            bool langExists = await _context.StudyLanguages.AnyAsync(l => l.Name == langDto.LanguageName);
+            if (langExists)
+            {
+                return BadRequest("Language already exists!");
+            }
+
             StudyLanguage lang = _mapper.Map<StudyLanguageDto, StudyLanguage>(langDto);
             _context.StudyLanguages.Add(lang);
             await _context.SaveChangesAsync();
@@ -98,6 +104,12 @@ namespace AttendanceWithQrCodes.Controllers
             if (langDto.LanguageName.IsNullOrEmpty())
             {
                 return BadRequest();
+            }
+
+            bool langExists = await _context.StudyLanguages.AnyAsync(l => l.Name == langDto.LanguageName && l.Id != id);
+            if (langExists)
+            {
+                return BadRequest("Language already exists!");
             }
 
             StudyLanguage? lang = await _context.StudyLanguages.SingleOrDefaultAsync(l => l.Id == id);

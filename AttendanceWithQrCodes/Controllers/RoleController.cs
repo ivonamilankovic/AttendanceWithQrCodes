@@ -75,6 +75,12 @@ namespace AttendanceWithQrCodes.Controllers
                 return BadRequest();
             }
 
+            bool roleExists = await _context.Roles.AnyAsync(r => r.Name == roleDto.RoleName);
+            if (roleExists)
+            {
+                return BadRequest("Role already exists!");
+            }
+
             Role newRole = _mapper.Map<RoleDto, Role>(roleDto);
             _context.Roles.Add(newRole);
             await _context.SaveChangesAsync();
@@ -96,6 +102,12 @@ namespace AttendanceWithQrCodes.Controllers
             if (roleDto.RoleName.IsNullOrEmpty())
             {
                 return BadRequest();
+            }
+
+            bool roleExists = await _context.Roles.AnyAsync(r => r.Name == roleDto.RoleName && r.Id != id);
+            if (roleExists)
+            {
+                return BadRequest("Role already exists!");
             }
 
             Role? role = await _context.Roles.SingleOrDefaultAsync(r => r.Id == id);

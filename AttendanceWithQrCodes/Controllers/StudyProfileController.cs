@@ -76,6 +76,12 @@ namespace AttendanceWithQrCodes.Controllers
                 return BadRequest();
             }
 
+            bool profileExists = await _context.StudyProfiles.AnyAsync(p => p.Name == profileDto.ProfileName);
+            if (profileExists)
+            {
+                return BadRequest("Profile already exists!");
+            }
+
             StudyProfile profile = _mapper.Map<StudyProfileDto, StudyProfile>(profileDto);
             _context.StudyProfiles.Add(profile);
             await _context.SaveChangesAsync();
@@ -98,6 +104,12 @@ namespace AttendanceWithQrCodes.Controllers
             if (profileDto.ProfileName.IsNullOrEmpty())
             {
                 return BadRequest();
+            }
+
+            bool profileExists = await _context.StudyProfiles.AnyAsync(p => p.Name == profileDto.ProfileName && p.Id != id);
+            if (profileExists)
+            {
+                return BadRequest("Profile already exists!");
             }
 
             StudyProfile? profile = await _context.StudyProfiles.SingleOrDefaultAsync(p => p.Id == id);
