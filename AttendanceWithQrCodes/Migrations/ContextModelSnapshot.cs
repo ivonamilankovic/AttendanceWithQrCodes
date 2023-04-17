@@ -203,10 +203,7 @@ namespace AttendanceWithQrCodes.Migrations
             modelBuilder.Entity("AttendanceWithQrCodes.Models.StudentInformation", b =>
                 {
                     b.Property<int>("Index")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Index"));
 
                     b.Property<string>("MacAddress")
                         .IsRequired()

@@ -19,6 +19,8 @@ namespace AttendanceWithQrCodes.Profiles
                     dest => dest.Role.Name,
                     src => src.MapFrom(s => s.Role.RoleName))
                 .ReverseMap();
+            CreateMap<UserNameEmailDto, User>()
+                .ReverseMap();
         }
     }
 }
