@@ -99,6 +99,12 @@ namespace AttendanceWithQrCodes.Controllers
                 return BadRequest("User you provided is already set to another index number. Choose another user.");
             }
 
+            User? user = await _context.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == studentDto.UserId);
+            if (user.Role.Name != "Student")
+            {
+                return BadRequest("User you provided is not student. Choose another user.");
+            }
+
             bool langExists = await _context.StudyLanguages.AnyAsync(l => l.Id == studentDto.StudyLanguageId);
             if (!langExists)
             {
