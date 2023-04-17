@@ -1,4 +1,5 @@
 ﻿using AttendanceWithQrCodes.Data;
+using AttendanceWithQrCodes.Linq;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
 using AutoMapper;
@@ -29,10 +30,15 @@ namespace AttendanceWithQrCodes.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(int studyProfile, int studyLanguage)
         {
             IList<StudentInformation> students = await _context.StudentInformations
-                                                .Include(s => s.User).ToListAsync();
+                                                .Include(s => s.User)
+                                                .Include(s => s.StudyLanguage)
+                                                .Include(s => s.StudyProfile)
+                                                .WhereIf(studyProfile != 0, s => s.StudyProfile.Id == studyProfile)
+                                                .WhereIf(studyLanguage != 0, s => s.StudyLanguage.Id == studyLanguage)
+                                                .ToListAsync();
             if (!students.Any())
             {
                 return NoContent();
