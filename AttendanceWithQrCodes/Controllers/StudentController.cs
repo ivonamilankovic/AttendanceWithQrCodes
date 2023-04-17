@@ -126,6 +126,9 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="studentDto"></param>
         /// <returns></returns>
         [HttpPut("{index}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(int index, StudentInfoUpdateDto studentDto)
         {
             StudentInformation? student = await _context.StudentInformations
