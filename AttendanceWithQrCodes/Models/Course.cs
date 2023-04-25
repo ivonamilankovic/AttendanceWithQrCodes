@@ -23,5 +23,10 @@ namespace AttendanceWithQrCodes.Models
         public int? AssistantId { get; set; }
         public User? Assistant { get; set; }
 
+        [NotMapped]
+        public ICollection<CourseLanguage>? CourseLanguages { get; set; }
+        [NotMapped]
+        public ICollection<CourseStudyProfile>? CourseStudyProfiles { get; set; } 
+
     }
 }
