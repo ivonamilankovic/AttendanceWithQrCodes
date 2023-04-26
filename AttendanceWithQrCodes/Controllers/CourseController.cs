@@ -23,16 +23,82 @@ namespace AttendanceWithQrCodes.Controllers
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Returns list of courses.
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll()
         {
-            IList<Course> courses = await _context.Courses.Include(c => c.Assistant)
+            IList<Course> courses = await _context.Courses
+                                         .Include(c => c.Assistant)
                                          .Include(c => c.Professor)
                                          .ToListAsync();
-            return Ok(courses);
+            if (!courses.Any())
+            {
+                return NoContent();
+            }
+
+            foreach(Course course in courses)
+            {
+                course.CourseLanguages = await _context.CoursesLanguages
+                                   .Include(cl => cl.StudyLanguage)
+                                   .Where(cp => cp.CourseId == course.Id)
+                                   .ToArrayAsync();
+                course.CourseStudyProfiles = await _context.CoursesStudyProfiles
+                                    .Include(cp => cp.StudyProfile)
+                                    .Where(cp => cp.CourseId == course.Id)
+                                    .ToArrayAsync();
+            }
+
+            IList<CourseListDto> courseList = _mapper.Map<IList<Course>, IList<CourseListDto>>(courses);
+            return Ok(courseList);
         }
 
+        /// <summary>
+        /// Returns course by id.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetById(int id)
+        {
+            Course? course = await _context.Courses
+                                .Include(c => c.Professor)                 
+                                .Include(c => c.Assistant)                 
+                                .Where(c => c.Id == id)
+                                .SingleOrDefaultAsync();
+            if(course == null)
+            {
+                return NotFound();
+            }
+
+            course.CourseLanguages = await _context.CoursesLanguages
+                                   .Include(cl => cl.StudyLanguage)
+                                   .Where(cl => cl.CourseId == course.Id)
+                                   .ToArrayAsync();
+            course.CourseStudyProfiles = await _context.CoursesStudyProfiles
+                                .Include(cp => cp.StudyProfile)
+                                .Where(cp => cp.CourseId == course.Id)
+                                .ToArrayAsync();
+
+            CourseDetailsDto courseDetails = _mapper.Map<Course, CourseDetailsDto>(course);
+            return Ok(courseDetails);
+        } 
+
+        /// <summary>
+        /// Creates new course.
+        /// </summary>
+        /// <param name="courseDto"></param>
+        /// <returns></returns>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Create(CourseCreateUpdateDto courseDto) 
         {
             if(courseDto == null)
@@ -120,14 +186,206 @@ namespace AttendanceWithQrCodes.Controllers
 
             await _context.SaveChangesAsync();
 
-            course.CourseLanguages = await _context.CoursesLanguages    
+            course.CourseLanguages = await _context.CoursesLanguages
+                                    .Include(cl => cl.StudyLanguage)
                                     .Where(cp => cp.CourseId == course.Id)  
                                     .ToArrayAsync();
             course.CourseStudyProfiles = await _context.CoursesStudyProfiles
+                                    .Include(cp => cp.StudyProfile)
                                     .Where(cp => cp.CourseId == course.Id)
                                     .ToArrayAsync();
 
-            return Ok(course);
+            CourseDetailsDto courseDetails = _mapper.Map<Course, CourseDetailsDto>(course);
+            return Ok(courseDetails);
         }
+
+        /// <summary>
+        /// Updates course by id.
+        /// </summary>
+        /// <param name="courseDto"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Update(CourseCreateUpdateDto courseDto, int id)
+        {
+            if (courseDto == null)
+            {
+                return BadRequest();
+            }
+
+            bool sameCourseExists = await _context.Courses.AnyAsync(c => c.Name == courseDto.Name && c.Id != id);
+            if (sameCourseExists)
+            {
+                return BadRequest("Course with same name already exists.");
+            }
+
+            User? professor = await _context.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == courseDto.ProfessorId);
+            if (professor == null)
+            {
+                return NotFound("User you provided for professor does not exist.");
+            }
+            if (professor.Role.Name != "Professor")
+            {
+                return BadRequest("User you provided for professor does not have role of professor.");
+            }
+            if (courseDto.LecturesNumForProfessor <= 0)
+            {
+                return BadRequest("Number of lectures must be grater than 0.");
+            }
+
+            if (courseDto.AssistantId != 0)
+            {
+                User? assistant = await _context.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == courseDto.AssistantId);
+                if (assistant == null)
+                {
+                    return NotFound("User you provided for assistant does not exist.");
+                }
+                if (assistant.Role.Name != "Assistant")
+                {
+                    return BadRequest("User you provided for assistant does not have role of assistant.");
+                }
+                if (courseDto.LecturesNumForAssistent <= 0)
+                {
+                    return BadRequest("Number of lecturese must be grater than 0.");
+                }
+            }
+            else
+            {
+                courseDto.LecturesNumForAssistent = null;
+                courseDto.AssistantId = null;
+            }
+
+            if (!courseDto.CourseLanguages.Any())
+            {
+                return BadRequest("You must provide languages for this course.");
+            }
+
+            if (!courseDto.CourseStudyProfiles.Any())
+            {
+                return BadRequest("You must provide study profiles for this course.");
+            }
+
+            Course? course = await _context.Courses
+                                .Include(c => c.Professor)
+                                .Include(c => c.Assistant)
+                                .Where(c => c.Id == id)
+                                .SingleOrDefaultAsync();
+            if(course == null)
+            {
+                return NotFound();
+            }
+            _mapper.Map<CourseCreateUpdateDto, Course>(courseDto, course);
+            course.CourseLanguages = null;
+            course.CourseStudyProfiles = null;
+            await _context.SaveChangesAsync();
+
+            course.CourseLanguages = await _context.CoursesLanguages
+                                   .Include(cl => cl.StudyLanguage)
+                                   .Where(cp => cp.CourseId == id)
+                                   .ToListAsync();
+            course.CourseStudyProfiles = await _context.CoursesStudyProfiles
+                                    .Include(cp => cp.StudyProfile)
+                                    .Where(cp => cp.CourseId == id)
+                                    .ToListAsync();
+            
+            foreach (CourseLanguageIds languageId in courseDto.CourseLanguages)
+            {
+                CourseLanguage cl = new CourseLanguage
+                {
+                    CourseId = id,
+                    StudyLanguageId = languageId.Id
+                };
+
+                if (!course.CourseLanguages.Any(c => c.StudyLanguageId == cl.StudyLanguageId))
+                {
+                    _context.CoursesLanguages.Add(cl);
+                }                
+            }
+            foreach (CourseLanguage language in course.CourseLanguages)
+            {
+                if (!courseDto.CourseLanguages.Any(cl => cl.Id == language.StudyLanguageId))
+                {
+                    _context.CoursesLanguages.Remove(language);
+                }
+            }
+
+            foreach (CourseStudyProfilesIds profileId in courseDto.CourseStudyProfiles)
+            {
+                CourseStudyProfile cp = new CourseStudyProfile
+                {
+                    CourseId = id,
+                    StudyProfileId = profileId.Id
+                };
+
+                if (!course.CourseStudyProfiles.Any(c => c.StudyProfileId == cp.StudyProfileId))
+                {
+                    _context.CoursesStudyProfiles.Add(cp);
+                }
+            }
+            foreach (CourseStudyProfile profile in course.CourseStudyProfiles)
+            {
+                if (!courseDto.CourseStudyProfiles.Any(cl => cl.Id == profile.StudyProfileId))
+                {
+                    _context.CoursesStudyProfiles.Remove(profile);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            course.CourseLanguages = await _context.CoursesLanguages
+                                    .Include(cl => cl.StudyLanguage)
+                                    .Where(cp => cp.CourseId == course.Id)
+                                    .ToArrayAsync();
+            course.CourseStudyProfiles = await _context.CoursesStudyProfiles
+                                    .Include(cp => cp.StudyProfile)
+                                    .Where(cp => cp.CourseId == course.Id)
+                                    .ToArrayAsync();
+
+            CourseDetailsDto courseDetails = _mapper.Map<Course, CourseDetailsDto>(course);
+            return Ok(courseDetails);
+        }
+
+        /// <summary>
+        /// Deletes course by id.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete(int id)
+        {
+            Course? course = await _context.Courses
+                                .Where(c => c.Id == id)
+                                .SingleOrDefaultAsync();
+            if (course == null)
+            {
+                return NotFound();
+            }
+
+            course.CourseLanguages = await _context.CoursesLanguages
+                                   .Where(cl => cl.CourseId == id)
+                                   .ToArrayAsync();
+            course.CourseStudyProfiles = await _context.CoursesStudyProfiles
+                                .Where(cp => cp.CourseId == id)
+                                .ToArrayAsync();
+
+            foreach(CourseLanguage language in course.CourseLanguages)
+            {
+                _context.CoursesLanguages.Remove(language);
+            }
+            foreach(CourseStudyProfile profile in course.CourseStudyProfiles)
+            {
+                _context.CoursesStudyProfiles.Remove(profile);
+            }
+            _context.Courses.Remove(course);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
     }
 }
