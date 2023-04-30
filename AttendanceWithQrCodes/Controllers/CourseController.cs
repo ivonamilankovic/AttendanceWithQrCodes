@@ -1,11 +1,12 @@
 ﻿using AttendanceWithQrCodes.Data;
+using AttendanceWithQrCodes.Linq;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
 using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
+using System.Collections.Generic;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -30,30 +31,63 @@ namespace AttendanceWithQrCodes.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(int professorId, int assistantId, int languageId, int profileId)
         {
             IList<Course> courses = await _context.Courses
                                          .Include(c => c.Assistant)
                                          .Include(c => c.Professor)
+                                         .WhereIf(professorId != 0, c => c.Professor.Id == professorId)
+                                         .WhereIf(assistantId != 0, c => c.Assistant.Id == assistantId)
                                          .ToListAsync();
             if (!courses.Any())
             {
                 return NoContent();
             }
 
+            List<Course> filteredCourses = new List<Course>();
+
             foreach(Course course in courses)
             {
-                course.CourseLanguages = await _context.CoursesLanguages
-                                   .Include(cl => cl.StudyLanguage)
-                                   .Where(cp => cp.CourseId == course.Id)
-                                   .ToArrayAsync();
-                course.CourseStudyProfiles = await _context.CoursesStudyProfiles
-                                    .Include(cp => cp.StudyProfile)
-                                    .Where(cp => cp.CourseId == course.Id)
-                                    .ToArrayAsync();
+                bool anyRequired = languageId != 0 || profileId != 0;
+
+                if (anyRequired)
+                {
+                    IList<CourseLanguage> languages = await _context.CoursesLanguages
+                                       .Include(cl => cl.StudyLanguage)
+                                       .Where(cl => cl.CourseId == course.Id)
+                                       .Where(cl => cl.StudyLanguageId == languageId)
+                                       .ToArrayAsync();
+                    IList<CourseStudyProfile> profiles = await _context.CoursesStudyProfiles
+                                        .Include(cp => cp.StudyProfile)
+                                        .Where(cp => cp.CourseId == course.Id)
+                                        .Where(cp => cp.StudyProfileId == profileId)
+                                        .ToArrayAsync();
+
+                    bool bothRequired = languageId != 0 && profileId != 0;
+                    bool hasLanguages = languages.Any();
+                    bool hasProfiles = profiles.Any();
+
+                    if (!bothRequired && hasLanguages)
+                    {
+                        filteredCourses.Add(course);
+                    }
+                    else if (!bothRequired && hasProfiles)
+                    {
+                        filteredCourses.Add(course);
+                    }
+                    else if (bothRequired && hasProfiles && hasLanguages)
+                    {
+                        filteredCourses.Add(course);
+                    }
+                }
+                else
+                {
+                    filteredCourses.Add(course);
+                }
             }
 
-            IList<CourseListDto> courseList = _mapper.Map<IList<Course>, IList<CourseListDto>>(courses);
+            filteredCourses = filteredCourses.Distinct().ToList();
+            IList<CourseListDto> courseList = _mapper.Map<IList<Course>, IList<CourseListDto>>(filteredCourses);
             return Ok(courseList);
         }
 
