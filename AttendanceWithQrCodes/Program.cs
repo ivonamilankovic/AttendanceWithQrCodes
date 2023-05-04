@@ -1,4 +1,5 @@
 using AttendanceWithQrCodes.Data;
+using AttendanceWithQrCodes.QrCode;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
@@ -17,6 +18,7 @@ builder.Services.AddSwaggerGen(c =>
     c.IncludeXmlComments(xmlPath);
 });
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddSingleton<ICreateQrCode, CreateQrCode>();
 
 var app = builder.Build();
 

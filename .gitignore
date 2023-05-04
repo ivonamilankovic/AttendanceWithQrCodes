@@ -16,6 +16,7 @@ nupkg/
 
 # Build results
 .vs/*
+AttendanceWithQrCodes/QrCode/codes/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/

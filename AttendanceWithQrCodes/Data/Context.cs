@@ -16,7 +16,7 @@ namespace AttendanceWithQrCodes.Data
         public DbSet<Course> Courses { get; set; }
         public DbSet<CourseStudyProfile> CoursesStudyProfiles { get; set; }
         public DbSet<CourseLanguage> CoursesLanguages { get; set; }
-        public DbSet<QrCode> QrCodes { get; set; }
+        public DbSet<Models.QrCode> QrCodes { get; set; }
         public DbSet<Lecture> Lectures { get; set; }
         public DbSet<StudentAttendance> StudentAttendances { get; set; }
     }

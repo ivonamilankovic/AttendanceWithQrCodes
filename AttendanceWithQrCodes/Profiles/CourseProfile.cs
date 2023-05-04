@@ -26,6 +26,8 @@ namespace AttendanceWithQrCodes.Profiles
                 .ReverseMap();
             CreateMap<Course, CourseListDto>()
                 .ReverseMap();
+            CreateMap<Course, CourseNameDto>()
+                .ReverseMap();
             CreateMap<CourseLanguage, CourseLanguageDto>()
                 .ForMember(
                     dest => dest.Language, 
