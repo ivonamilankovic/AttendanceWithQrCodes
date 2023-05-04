@@ -1,4 +1,5 @@
 ﻿using AttendanceWithQrCodes.Data;
+using AttendanceWithQrCodes.Linq;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
 using AttendanceWithQrCodes.QrCode;
@@ -26,6 +27,33 @@ namespace AttendanceWithQrCodes.Controllers
             _context = context;
             _mapper = mapper;
             _createQrCode = createQrCode;
+        }
+
+        /// <summary>
+        /// Returns list of lectures.
+        /// </summary>
+        /// <param name="lecturerId"></param>
+        /// <param name="courseId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<IActionResult> GetAll(int lecturerId, int courseId)
+        {
+            IList<Lecture> lectures = await _context.Lectures
+                                        .Include(l => l.QrCode)
+                                        .Include(l => l.Lecturer)
+                                        .Include(l => l.Course)
+                                        .WhereIf(lecturerId != 0, l => l.Lecturer.Id == lecturerId)
+                                        .WhereIf(courseId != 0, l => l.Course.Id == courseId)
+                                        .ToListAsync();
+            if (!lectures.Any())
+            {
+                return NoContent();
+            }
+
+            IList<LectureDetailsDto> lectureDetailsDtos = _mapper.Map<IList<Lecture>, IList<LectureDetailsDto>>(lectures);
+            return Ok(lectureDetailsDtos);
         }
 
         /// <summary>
