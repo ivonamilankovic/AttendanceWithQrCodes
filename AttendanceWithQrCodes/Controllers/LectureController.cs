@@ -55,6 +55,29 @@ namespace AttendanceWithQrCodes.Controllers
             IList<LectureDetailsDto> lectureDetailsDtos = _mapper.Map<IList<Lecture>, IList<LectureDetailsDto>>(lectures);
             return Ok(lectureDetailsDtos);
         }
+        /// <summary>
+        /// Returns lecture by id.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetById(int id)
+        {
+            Lecture? lecture = await _context.Lectures
+                                       .Include(l => l.QrCode)
+                                       .Include(l => l.Lecturer)
+                                       .Include(l => l.Course)
+                                       .SingleOrDefaultAsync(l => l.Id == id);
+            if (lecture == null)
+            {
+                return NotFound();
+            }
+
+           LectureDetailsDto lectureDetailsDto = _mapper.Map<Lecture, LectureDetailsDto>(lecture);
+            return Ok(lectureDetailsDto);
+        }
 
         /// <summary>
         /// Creates new lecture.
@@ -136,6 +159,119 @@ namespace AttendanceWithQrCodes.Controllers
             LectureDetailsDto lectureDetailsDto = _mapper.Map<Lecture, LectureDetailsDto>(lecture);
 
             return Ok(lectureDetailsDto);
+        }
+
+        /// <summary>
+        /// Updates lecture by id.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="lectureDto"></param>
+        /// <returns></returns>
+        [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Update(int id, LectureUpdateDto lectureDto )
+        {
+            if (lectureDto == null)
+            {
+                return BadRequest();
+            }
+            if (lectureDto.Name.IsNullOrEmpty() || lectureDto.Description.IsNullOrEmpty())
+            {
+                return BadRequest("Please provide information about lecture.");
+            }
+
+            Lecture? lecture = await _context.Lectures
+                                      .Include(l => l.QrCode)
+                                      .Include(l => l.Lecturer)
+                                      .Include(l => l.Course)
+                                      .SingleOrDefaultAsync(l => l.Id == id);
+            if (lecture == null)
+            {
+                return NotFound();
+            }
+
+            _mapper.Map<LectureUpdateDto, Lecture>(lectureDto, lecture);
+            await _context.SaveChangesAsync();
+
+            LectureDetailsDto lectureDetailsDto = _mapper.Map<Lecture, LectureDetailsDto>(lecture);
+            return Ok(lectureDetailsDto);
+        }
+
+        /// <summary>
+        /// Creates new qr code for lecture by lecture id.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpPut("QrCode/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> CreateNewQrCode(int id)
+        {
+            Lecture? lecture = await _context.Lectures
+                                      .Include(l => l.QrCode)
+                                      .Include(l => l.Lecturer)
+                                      .Include(l => l.Course)
+                                      .SingleOrDefaultAsync(l => l.Id == id);
+            if (lecture == null)
+            {
+                return NotFound();
+            }
+
+            lecture.Date = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            Models.QrCode qrCode = _createQrCode.GenerateQrCode(lecture.Date, lecture.Id);
+            _context.QrCodes.Add(qrCode);
+            await _context.SaveChangesAsync();
+
+            lecture.QrCode = qrCode;
+            await _context.SaveChangesAsync();
+
+            LectureDetailsDto lectureDetailsDto = _mapper.Map<Lecture, LectureDetailsDto>(lecture);
+
+            return Ok(lectureDetailsDto);
+        }
+
+        /// <summary>
+        /// Deletes lecture by id.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> Delete(int id)
+        {
+            Lecture? lecture = await _context.Lectures
+                                     .Include(l => l.QrCode)
+                                     .Include(l => l.Lecturer)
+                                     .Include(l => l.Course)
+                                     .SingleOrDefaultAsync(l => l.Id == id);
+            if (lecture == null)
+            {
+                return NotFound();
+            }
+            int cId = lecture.Course.Id;
+            lecture.QrCode = null;
+            lecture.Lecturer = null;
+            lecture.Course = null;
+            await _context.SaveChangesAsync();
+
+            Course? course = await _context.Courses.SingleOrDefaultAsync(c => c.Id == cId);
+            if (course == null)
+            {
+                return NotFound();
+            }
+
+            course.TotalTakenLectures--;
+            await _context.SaveChangesAsync();
+
+            _context.Lectures.Remove(lecture);
+            await _context.SaveChangesAsync();
+
+            return Ok();
         }
     }
 }
