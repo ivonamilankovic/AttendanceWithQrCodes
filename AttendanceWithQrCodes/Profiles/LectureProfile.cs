@@ -14,6 +14,8 @@ namespace AttendanceWithQrCodes.Profiles
                 .ReverseMap();
             CreateMap<Lecture, LectureDetailsDto>()
                 .ReverseMap();
+            CreateMap<Lecture, LectureAttendanceDetailsDto>()
+                .ReverseMap();
         }
     }
 }
