@@ -22,15 +22,4 @@ namespace AttendanceWithQrCodes.Models.DTOs
         public int[] CourseStudyProfiles { get; set; } = default!;
     }
 
-    public class CourseLanguageIds
-    {
-        [Required]
-        public int Id { get; set; } = default!;
-    }
-    public class CourseStudyProfilesIds
-    {
-        [Required]
-        public int Id { get; set; } = default!;
-    }
-
 }

@@ -19,6 +19,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddSingleton<ICreateQrCode, CreateQrCode>();
+builder.Services.AddHttpClient();
 
 var app = builder.Build();
 

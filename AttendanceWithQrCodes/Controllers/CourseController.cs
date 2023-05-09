@@ -6,7 +6,6 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
-using System.Collections.Generic;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -18,10 +17,12 @@ namespace AttendanceWithQrCodes.Controllers
     {
         private readonly Context _context;
         private readonly IMapper _mapper;
-        public CourseController(Context context, IMapper mapper)
+        private readonly HttpClient _httpClient;
+        public CourseController(Context context, IMapper mapper, IHttpClientFactory httpClientFactory)
         {
             _context = context;
             _mapper = mapper;
+             _httpClient = httpClientFactory.CreateClient();
         }
 
         /// <summary>
@@ -419,6 +420,20 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 _context.CoursesStudyProfiles.Remove(profile);
             }
+
+            IList<Lecture> lectures = await _context.Lectures
+                                    .Include(l => l.Course)
+                                    .Where(l => l.Course.Id == id)
+                                    .ToListAsync();
+
+            var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}";
+            
+            foreach(Lecture l in lectures)
+            {
+                HttpResponseMessage response = await _httpClient.DeleteAsync(baseUrl + "/api/Lecture/" + l.Id);
+                response.EnsureSuccessStatusCode();
+            }
+
             _context.Courses.Remove(course);
             await _context.SaveChangesAsync();
 
