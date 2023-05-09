@@ -4,11 +4,9 @@ using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
 using AttendanceWithQrCodes.QrCode;
 using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Linq;
 using System.Net.Mime;
 
 namespace AttendanceWithQrCodes.Controllers
@@ -219,7 +217,13 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound();
             }
 
+            Models.QrCode? qrToDelete = lecture.QrCode;
+            lecture.QrCode = null;
             lecture.Date = DateTime.Now;
+            if (qrToDelete != null)
+            {
+                _context.QrCodes.Remove(qrToDelete);
+            }
             await _context.SaveChangesAsync();
 
             Models.QrCode qrCode = _createQrCode.GenerateQrCode(lecture.Date, lecture.Id);
@@ -253,10 +257,23 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 return NotFound();
             }
+            Models.QrCode? qr = lecture.QrCode;
             int cId = lecture.Course.Id;
             lecture.QrCode = null;
             lecture.Lecturer = null;
             lecture.Course = null;
+            if (qr != null)
+            {
+                _context.QrCodes.Remove(qr);
+            }
+            IList<StudentAttendance> attendances = await _context.StudentAttendances
+                                                .Include(a => a.Lecture)
+                                                .Where(a => a.Lecture.Id == id)
+                                                .ToListAsync();
+            foreach(StudentAttendance a in attendances)
+            {
+                _context.StudentAttendances.Remove(a);
+            }
             await _context.SaveChangesAsync();
 
             Course? course = await _context.Courses.SingleOrDefaultAsync(c => c.Id == cId);
