@@ -88,6 +88,10 @@ namespace AttendanceWithQrCodes.Controllers
 
             filteredCourses = filteredCourses.Distinct().ToList();
             IList<CourseListDto> courseList = _mapper.Map<IList<Course>, IList<CourseListDto>>(filteredCourses);
+            if (!courseList.Any())
+            {
+                return NoContent();
+            }
             return Ok(courseList);
         }
 
@@ -198,26 +202,26 @@ namespace AttendanceWithQrCodes.Controllers
             _context.Courses.Add(course);
             await _context.SaveChangesAsync();
 
-            foreach(CourseLanguageIds languageId in courseDto.CourseLanguages)
+            foreach(int languageId in courseDto.CourseLanguages)
             {
                 CourseLanguage cl = new CourseLanguage
                 {
                     CourseId = course.Id,
-                    StudyLanguageId = languageId.Id
+                    StudyLanguageId = languageId
                 };
                 _context.CoursesLanguages.Add(cl);
             }
 
-            foreach (CourseStudyProfilesIds profileId in courseDto.CourseStudyProfiles)
+            foreach (int profileId in courseDto.CourseStudyProfiles)
             {
                 CourseStudyProfile cp = new CourseStudyProfile
                 {
                     CourseId = course.Id,
-                    StudyProfileId = profileId.Id
+                    StudyProfileId = profileId
                 };
                 _context.CoursesStudyProfiles.Add(cp);
             }
-
+            
             await _context.SaveChangesAsync();
 
             course.CourseLanguages = await _context.CoursesLanguages
@@ -325,12 +329,12 @@ namespace AttendanceWithQrCodes.Controllers
                                     .Where(cp => cp.CourseId == id)
                                     .ToListAsync();
             
-            foreach (CourseLanguageIds languageId in courseDto.CourseLanguages)
+            foreach (int languageId in courseDto.CourseLanguages)
             {
                 CourseLanguage cl = new CourseLanguage
                 {
                     CourseId = id,
-                    StudyLanguageId = languageId.Id
+                    StudyLanguageId = languageId
                 };
 
                 if (!course.CourseLanguages.Any(c => c.StudyLanguageId == cl.StudyLanguageId))
@@ -340,18 +344,18 @@ namespace AttendanceWithQrCodes.Controllers
             }
             foreach (CourseLanguage language in course.CourseLanguages)
             {
-                if (!courseDto.CourseLanguages.Any(cl => cl.Id == language.StudyLanguageId))
+                if (!courseDto.CourseLanguages.Any(cl => cl == language.StudyLanguageId))
                 {
                     _context.CoursesLanguages.Remove(language);
                 }
             }
 
-            foreach (CourseStudyProfilesIds profileId in courseDto.CourseStudyProfiles)
+            foreach (int profileId in courseDto.CourseStudyProfiles)
             {
                 CourseStudyProfile cp = new CourseStudyProfile
                 {
                     CourseId = id,
-                    StudyProfileId = profileId.Id
+                    StudyProfileId = profileId
                 };
 
                 if (!course.CourseStudyProfiles.Any(c => c.StudyProfileId == cp.StudyProfileId))
@@ -361,7 +365,7 @@ namespace AttendanceWithQrCodes.Controllers
             }
             foreach (CourseStudyProfile profile in course.CourseStudyProfiles)
             {
-                if (!courseDto.CourseStudyProfiles.Any(cl => cl.Id == profile.StudyProfileId))
+                if (!courseDto.CourseStudyProfiles.Any(cp => cp == profile.StudyProfileId))
                 {
                     _context.CoursesStudyProfiles.Remove(profile);
                 }
