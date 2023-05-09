@@ -14,7 +14,7 @@ namespace AttendanceWithQrCodes.Models
 
         [ForeignKey("StudentIndex")]
         public int? StudentIndex { get; set; }
-        public StudentInformation? StudentInformation { get; set; }
+        public StudentInformation? Student { get; set; }
 
         [ForeignKey("LectureId")]
         public int? LectureId { get; set; }
