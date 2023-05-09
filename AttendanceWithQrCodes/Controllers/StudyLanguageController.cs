@@ -140,6 +140,24 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound();
             }
 
+            IList<CourseLanguage> courseLanguages = await _context.CoursesLanguages
+                                                .Include(cl => cl.StudyLanguage)
+                                                .Where(cl => cl.StudyLanguage.Id == id)
+                                                .ToListAsync();
+            foreach(CourseLanguage courseLanguage in courseLanguages)
+            {
+                _context.CoursesLanguages.Remove(courseLanguage);
+            }
+
+            IList<StudentInformation> students = await _context.StudentInformations
+                                                .Include(s => s.StudyLanguage)
+                                                .Where(s => s.StudyLanguage.Id == id)
+                                                .ToListAsync();
+            foreach(StudentInformation s in students)
+            {
+                s.StudyLanguage = null;   
+            }
+
             _context.StudyLanguages.Remove(lang);
             await _context.SaveChangesAsync();
 

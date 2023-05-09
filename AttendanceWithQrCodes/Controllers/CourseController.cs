@@ -1,4 +1,5 @@
 ﻿using AttendanceWithQrCodes.Data;
+using AttendanceWithQrCodes.HelperMethods;
 using AttendanceWithQrCodes.Linq;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
@@ -18,11 +19,13 @@ namespace AttendanceWithQrCodes.Controllers
         private readonly Context _context;
         private readonly IMapper _mapper;
         private readonly HttpClient _httpClient;
-        public CourseController(Context context, IMapper mapper, IHttpClientFactory httpClientFactory)
+        private readonly IGenerateAppBaseUrl _appBaseUrl;
+        public CourseController(Context context, IMapper mapper, IHttpClientFactory httpClientFactory, IGenerateAppBaseUrl appBaseUrl)
         {
             _context = context;
             _mapper = mapper;
-             _httpClient = httpClientFactory.CreateClient();
+            _httpClient = httpClientFactory.CreateClient();
+            _appBaseUrl = appBaseUrl;
         }
 
         /// <summary>
@@ -425,15 +428,14 @@ namespace AttendanceWithQrCodes.Controllers
                                     .Include(l => l.Course)
                                     .Where(l => l.Course.Id == id)
                                     .ToListAsync();
-
-            var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}";
             
             foreach(Lecture l in lectures)
             {
-                HttpResponseMessage response = await _httpClient.DeleteAsync(baseUrl + "/api/Lecture/" + l.Id);
+                HttpResponseMessage response = await _httpClient.DeleteAsync(_appBaseUrl.GetAppBaseUrl() + "/api/Lecture/" + l.Id);
                 response.EnsureSuccessStatusCode();
             }
 
+            await _context.SaveChangesAsync();
             _context.Courses.Remove(course);
             await _context.SaveChangesAsync();
 

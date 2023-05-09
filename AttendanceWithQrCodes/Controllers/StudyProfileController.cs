@@ -140,6 +140,24 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound();
             }
 
+            IList<CourseStudyProfile> courseStudyProfiles = await _context.CoursesStudyProfiles
+                                                .Include(cl => cl.StudyProfile)
+                                                .Where(cl => cl.StudyProfile.Id == id)
+                                                .ToListAsync();
+            foreach (CourseStudyProfile courseStudyProfile in courseStudyProfiles)
+            {
+                _context.CoursesStudyProfiles.Remove(courseStudyProfile);
+            }
+
+            IList<StudentInformation> students = await _context.StudentInformations
+                                                .Include(s => s.StudyProfile)
+                                                .Where(s => s.StudyProfile.Id == id)
+                                                .ToListAsync();
+            foreach (StudentInformation s in students)
+            {
+                s.StudyProfile = null;
+            }
+
             _context.StudyProfiles.Remove(profile);
             await _context.SaveChangesAsync();
 
