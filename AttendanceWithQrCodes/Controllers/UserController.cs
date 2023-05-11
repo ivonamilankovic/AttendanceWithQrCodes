@@ -141,10 +141,70 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)
         {
-            User? user = await _context.Users.SingleOrDefaultAsync(u => u.Id == id);
+            User? user = await _context.Users.Include(u => u.Role)
+                        .SingleOrDefaultAsync(u => u.Id == id);
             if (user == null)
             {
                 return NotFound();
+            }
+
+            if(user.Role.Name == "Student")
+            {
+                StudentInformation? studentInformation = await _context.StudentInformations
+                                                    .SingleOrDefaultAsync(s => s.UserId == id);
+                if (studentInformation != null)
+                {
+                    IList<StudentAttendance> attendances = await _context.StudentAttendances
+                                                        .Where(a => a.StudentIndex == studentInformation.Index)
+                                                        .ToListAsync();
+                    foreach (StudentAttendance a in attendances)
+                    {
+                        _context.StudentAttendances.Remove(a);
+                    }
+                    await _context.SaveChangesAsync();
+                    _context.StudentInformations.Remove(studentInformation);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            else if (user.Role.Name == "Professor")
+            {
+                IList<Lecture> lectures = await _context.Lectures
+                                        .Where(l => l.LecturerId == id)
+                                        .ToListAsync();
+                foreach(Lecture l in lectures)
+                {
+                    l.LecturerId = null;
+                }
+
+                IList<Course> courses = await _context.Courses
+                                        .Where(l => l.ProfessorId == id)
+                                        .ToListAsync();
+                foreach(Course c in courses)
+                {
+                    c.ProfessorId = null;
+                }
+
+                await _context.SaveChangesAsync();
+            }
+            else if (user.Role.Name == "Assistant")
+            {
+                IList<Lecture> lectures = await _context.Lectures
+                                        .Where(l => l.LecturerId == id)
+                                        .ToListAsync();
+                foreach (Lecture l in lectures)
+                {
+                    l.LecturerId = null;
+                }
+
+                IList<Course> courses = await _context.Courses
+                                        .Where(l => l.AssistantId == id)
+                                        .ToListAsync();
+                foreach (Course c in courses)
+                {
+                    c.AssistantId = null;
+                }
+
+                await _context.SaveChangesAsync();
             }
 
             _context.Users.Remove(user);
