@@ -1,4 +1,5 @@
 ﻿using AttendanceWithQrCodes.Data;
+using static AttendanceWithQrCodes.Data.RoleConstants;
 using AttendanceWithQrCodes.HelperMethods;
 using AttendanceWithQrCodes.Linq;
 using AttendanceWithQrCodes.Models;
@@ -41,8 +42,8 @@ namespace AttendanceWithQrCodes.Controllers
                                                 .Include(s => s.User)
                                                 .Include(s => s.StudyLanguage)
                                                 .Include(s => s.StudyProfile)
-                                                .WhereIf(studyProfile != 0, s => s.StudyProfile.Id == studyProfile)
-                                                .WhereIf(studyLanguage != 0, s => s.StudyLanguage.Id == studyLanguage)
+                                                .WhereIf(studyProfile != 0, s => s.StudyProfileId == studyProfile)
+                                                .WhereIf(studyLanguage != 0, s => s.StudyLanguageId == studyLanguage)
                                                 .ToListAsync();
             if (!students.Any())
             {
@@ -98,14 +99,14 @@ namespace AttendanceWithQrCodes.Controllers
                 return BadRequest("Index you provided already exists. It must be unique!");
             }
 
-            bool userAlreadyStudent = await _context.StudentInformations.Include(s => s.User).AnyAsync(s => s.User.Id == studentDto.UserId);
+            bool userAlreadyStudent = await _context.StudentInformations.Include(s => s.User).AnyAsync(s => s.UserId == studentDto.UserId);
             if (userAlreadyStudent)
             {
                 return BadRequest("User you provided is already set to another index number. Choose another user.");
             }
 
             User? user = await _context.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == studentDto.UserId);
-            if (user.Role.Name != "Student")
+            if (user.Role.Name != StudentRole)
             {
                 return BadRequest("User you provided is not student. Choose another user.");
             }
@@ -198,7 +199,7 @@ namespace AttendanceWithQrCodes.Controllers
             
             IList<StudentAttendance> attendances = await _context.StudentAttendances
                                                     .Include(a => a.Student)
-                                                    .Where(a => a.Student.Index == index)
+                                                    .Where(a => a.StudentIndex == index)
                                                     .ToListAsync();
             foreach(StudentAttendance a in attendances)
             {

@@ -1,4 +1,5 @@
 ﻿using AttendanceWithQrCodes.Data;
+using static AttendanceWithQrCodes.Data.RoleConstants;
 using AttendanceWithQrCodes.Linq;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
@@ -42,8 +43,8 @@ namespace AttendanceWithQrCodes.Controllers
                                         .Include(l => l.QrCode)
                                         .Include(l => l.Lecturer)
                                         .Include(l => l.Course)
-                                        .WhereIf(lecturerId != 0, l => l.Lecturer.Id == lecturerId)
-                                        .WhereIf(courseId != 0, l => l.Course.Id == courseId)
+                                        .WhereIf(lecturerId != 0, l => l.LecturerId == lecturerId)
+                                        .WhereIf(courseId != 0, l => l.CourseId == courseId)
                                         .ToListAsync();
             if (!lectures.Any())
             {
@@ -104,7 +105,7 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound("Lecturer does not exist.");
             }
             
-            if(lecturer.Role.Name == "Professor")
+            if(lecturer.Role.Name == ProfessorRole)
             {
                 bool hasThisCourse = await _context.Courses.AnyAsync(c => c.ProfessorId == lectureDto.LecturerId && c.Id == lectureDto.CourseId);
                 if (!hasThisCourse)
@@ -112,7 +113,7 @@ namespace AttendanceWithQrCodes.Controllers
                     return BadRequest("This lecturer does not teach this course.");
                 }
             }
-            else if(lecturer.Role.Name == "Assistant")
+            else if(lecturer.Role.Name == AssistantRole)
             {
                 bool hasThisCourse = await _context.Courses.AnyAsync(c => c.AssistantId == lectureDto.LecturerId && c.Id == lectureDto.CourseId);
                 if (!hasThisCourse)
@@ -268,7 +269,7 @@ namespace AttendanceWithQrCodes.Controllers
             }
             IList<StudentAttendance> attendances = await _context.StudentAttendances
                                                 .Include(a => a.Lecture)
-                                                .Where(a => a.Lecture.Id == id)
+                                                .Where(a => a.LectureId == id)
                                                 .ToListAsync();
             foreach(StudentAttendance a in attendances)
             {

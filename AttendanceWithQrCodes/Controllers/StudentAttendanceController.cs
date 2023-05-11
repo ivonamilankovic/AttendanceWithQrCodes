@@ -48,12 +48,12 @@ namespace AttendanceWithQrCodes.Controllers
                                     .Include(a => a.Lecture.Course)
                                     .Include(a => a.Lecture.Lecturer)
                                     .Include(a => a.Lecture.QrCode)
-                                    .WhereIf(studentIndex != 0, a => a.Student.Index == studentIndex)
-                                    .WhereIf(profileId != 0, a => a.Student.StudyProfile.Id == profileId)
-                                    .WhereIf(languageId != 0, a => a.Student.StudyLanguage.Id == languageId)
-                                    .WhereIf(lectureId != 0, a => a.Lecture.Id == lectureId)
-                                    .WhereIf(lecturerId != 0, a => a.Lecture.Lecturer.Id == lecturerId)
-                                    .WhereIf(courseId != 0, a => a.Lecture.Course.Id == courseId)
+                                    .WhereIf(studentIndex != 0, a => a.StudentIndex == studentIndex)
+                                    .WhereIf(profileId != 0, a => a.Student.StudyProfileId == profileId)
+                                    .WhereIf(languageId != 0, a => a.Student.StudyLanguageId == languageId)
+                                    .WhereIf(lectureId != 0, a => a.LectureId == lectureId)
+                                    .WhereIf(lecturerId != 0, a => a.Lecture.LecturerId == lecturerId)
+                                    .WhereIf(courseId != 0, a => a.Lecture.CourseId == courseId)
                                     .ToListAsync();
             if (!attendances.Any())
             {
@@ -113,7 +113,7 @@ namespace AttendanceWithQrCodes.Controllers
 
             bool attendanceSubmited = await _context.StudentAttendances
                                     .AnyAsync(a => a.StudentIndex == attendanceDto.Index    
-                                    && a.Lecture.Id == attendanceDto.LectureId);
+                                    && a.LectureId == attendanceDto.LectureId);
             if (attendanceSubmited)
             {
                 return BadRequest("You have already submited to this lecture."); 

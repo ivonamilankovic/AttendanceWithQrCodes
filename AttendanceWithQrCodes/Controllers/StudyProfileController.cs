@@ -142,7 +142,7 @@ namespace AttendanceWithQrCodes.Controllers
 
             IList<CourseStudyProfile> courseStudyProfiles = await _context.CoursesStudyProfiles
                                                 .Include(cl => cl.StudyProfile)
-                                                .Where(cl => cl.StudyProfile.Id == id)
+                                                .Where(cl => cl.StudyProfileId == id)
                                                 .ToListAsync();
             foreach (CourseStudyProfile courseStudyProfile in courseStudyProfiles)
             {
@@ -151,7 +151,7 @@ namespace AttendanceWithQrCodes.Controllers
 
             IList<StudentInformation> students = await _context.StudentInformations
                                                 .Include(s => s.StudyProfile)
-                                                .Where(s => s.StudyProfile.Id == id)
+                                                .Where(s => s.StudyProfileId == id)
                                                 .ToListAsync();
             foreach (StudentInformation s in students)
             {

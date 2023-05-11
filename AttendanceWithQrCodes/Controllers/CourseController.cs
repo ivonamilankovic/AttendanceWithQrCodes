@@ -1,4 +1,5 @@
 ﻿using AttendanceWithQrCodes.Data;
+using static AttendanceWithQrCodes.Data.RoleConstants;
 using AttendanceWithQrCodes.HelperMethods;
 using AttendanceWithQrCodes.Linq;
 using AttendanceWithQrCodes.Models;
@@ -40,8 +41,8 @@ namespace AttendanceWithQrCodes.Controllers
             IList<Course> courses = await _context.Courses
                                          .Include(c => c.Assistant)
                                          .Include(c => c.Professor)
-                                         .WhereIf(professorId != 0, c => c.Professor.Id == professorId)
-                                         .WhereIf(assistantId != 0, c => c.Assistant.Id == assistantId)
+                                         .WhereIf(professorId != 0, c => c.ProfessorId == professorId)
+                                         .WhereIf(assistantId != 0, c => c.AssistantId == assistantId)
                                          .ToListAsync();
             if (!courses.Any())
             {
@@ -159,7 +160,7 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 return NotFound("User you provided for professor does not exist.");
             }
-            if (professor.Role.Name != "Professor")
+            if (professor.Role.Name != ProfessorRole)
             {
                 return BadRequest("User you provided for professor does not have role of professor.");
             }
@@ -175,7 +176,7 @@ namespace AttendanceWithQrCodes.Controllers
                 {
                     return NotFound("User you provided for assistant does not exist.");
                 }
-                if (assistant.Role.Name != "Assistant")
+                if (assistant.Role.Name != AssistantRole)
                 {
                     return BadRequest("User you provided for assistant does not have role of assistant.");
                 }
@@ -269,7 +270,7 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 return NotFound("User you provided for professor does not exist.");
             }
-            if (professor.Role.Name != "Professor")
+            if (professor.Role.Name != ProfessorRole)
             {
                 return BadRequest("User you provided for professor does not have role of professor.");
             }
@@ -285,7 +286,7 @@ namespace AttendanceWithQrCodes.Controllers
                 {
                     return NotFound("User you provided for assistant does not exist.");
                 }
-                if (assistant.Role.Name != "Assistant")
+                if (assistant.Role.Name != AssistantRole)
                 {
                     return BadRequest("User you provided for assistant does not have role of assistant.");
                 }
@@ -426,7 +427,7 @@ namespace AttendanceWithQrCodes.Controllers
 
             IList<Lecture> lectures = await _context.Lectures
                                     .Include(l => l.Course)
-                                    .Where(l => l.Course.Id == id)
+                                    .Where(l => l.CourseId == id)
                                     .ToListAsync();
             
             foreach(Lecture l in lectures)

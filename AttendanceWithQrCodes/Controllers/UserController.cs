@@ -1,4 +1,5 @@
 ﻿using AttendanceWithQrCodes.Data;
+using static AttendanceWithQrCodes.Data.RoleConstants;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
 using AutoMapper;
@@ -148,7 +149,7 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound();
             }
 
-            if(user.Role.Name == "Student")
+            if(user.Role.Name == StudentRole)
             {
                 StudentInformation? studentInformation = await _context.StudentInformations
                                                     .SingleOrDefaultAsync(s => s.UserId == id);
@@ -166,7 +167,7 @@ namespace AttendanceWithQrCodes.Controllers
                     await _context.SaveChangesAsync();
                 }
             }
-            else if (user.Role.Name == "Professor")
+            else if (user.Role.Name == ProfessorRole)
             {
                 IList<Lecture> lectures = await _context.Lectures
                                         .Where(l => l.LecturerId == id)
@@ -186,7 +187,7 @@ namespace AttendanceWithQrCodes.Controllers
 
                 await _context.SaveChangesAsync();
             }
-            else if (user.Role.Name == "Assistant")
+            else if (user.Role.Name == AssistantRole)
             {
                 IList<Lecture> lectures = await _context.Lectures
                                         .Where(l => l.LecturerId == id)
