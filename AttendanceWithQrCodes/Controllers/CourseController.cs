@@ -8,6 +8,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -34,6 +35,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll(int professorId, int assistantId, int languageId, int profileId)
@@ -106,6 +108,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(int id)
@@ -139,6 +142,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="courseDto"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -249,6 +253,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -397,6 +402,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -35,6 +36,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="courseId"></param>
         /// <returns></returns>
         [HttpGet]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll(int lecturerId, int courseId)
@@ -54,12 +56,14 @@ namespace AttendanceWithQrCodes.Controllers
             IList<LectureDetailsDto> lectureDetailsDtos = _mapper.Map<IList<Lecture>, IList<LectureDetailsDto>>(lectures);
             return Ok(lectureDetailsDtos);
         }
+       
         /// <summary>
         /// Returns lecture by id.
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(int id)
@@ -84,6 +88,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="lectureDto"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -167,6 +172,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="lectureDto"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -204,6 +210,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpPut("QrCode/{id}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> CreateNewQrCode(int id)
@@ -245,6 +252,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)

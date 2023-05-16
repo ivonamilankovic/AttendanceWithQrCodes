@@ -1,7 +1,9 @@
 ﻿using AttendanceWithQrCodes.Data;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
+using static AttendanceWithQrCodes.Data.RoleConstants;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -28,6 +30,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll()
@@ -47,6 +50,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{id}")]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(int id)
@@ -67,6 +71,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="profileDto"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = AdminRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Create(StudyProfileDto profileDto)
@@ -96,6 +101,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="profileDto"></param>
         /// <returns></returns>
         [HttpPut("{id}")]
+        [Authorize(Roles = AdminRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -130,6 +136,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id}")]
+        [Authorize(Roles = AdminRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)
