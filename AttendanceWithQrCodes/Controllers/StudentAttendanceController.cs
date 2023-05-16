@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
+using AttendanceWithQrCodes.HelperMethods;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -19,10 +20,12 @@ namespace AttendanceWithQrCodes.Controllers
     {
         private readonly Context _context;
         private readonly IMapper _mapper;
-        public StudentAttendanceController(Context context, IMapper mapper)
+        private readonly ILocationCheck _locationCheck;
+        public StudentAttendanceController(Context context, IMapper mapper, ILocationCheck locationCheck)
         {
             _context = context;
             _mapper = mapper;
+            _locationCheck = locationCheck;
         }
 
         /// <summary>
@@ -105,6 +108,15 @@ namespace AttendanceWithQrCodes.Controllers
             if (lecture == null)
             {
                 return NotFound("Lecture not found.");
+            }
+
+            if (attendanceDto.Latitude > 0 && attendanceDto.Longitude > 0)
+            {
+                bool locationGood = _locationCheck.IsLocationAcceptable(attendanceDto.Latitude, attendanceDto.Longitude);
+                if (!locationGood)
+                {
+                    return BadRequest("Your location is not acceptable.");
+                }
             }
 
             bool attendanceSubmited = await _context.StudentAttendances
