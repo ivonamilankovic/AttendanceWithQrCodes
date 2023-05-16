@@ -52,7 +52,6 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddSingleton<ICreateQrCode, CreateQrCode>();
 builder.Services.AddSingleton<IGenerateAppBaseUrl, GenerateAppBaseUrl>();
 builder.Services.AddSingleton<IJwtHelper, JwtHelper>();
-builder.Services.AddSingleton<IFetchCurrentUser, FetchCurrentUser>();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(opt =>
