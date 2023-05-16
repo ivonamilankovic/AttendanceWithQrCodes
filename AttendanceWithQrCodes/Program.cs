@@ -52,6 +52,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddSingleton<ICreateQrCode, CreateQrCode>();
 builder.Services.AddSingleton<IGenerateAppBaseUrl, GenerateAppBaseUrl>();
 builder.Services.AddSingleton<IJwtHelper, JwtHelper>();
+builder.Services.AddSingleton<ILocationCheck, LocationCheck>();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(opt =>
@@ -69,6 +70,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 });
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JWT"));
+builder.Services.Configure<LocationOptions>(builder.Configuration.GetSection("Location"));
 
 var app = builder.Build();
 

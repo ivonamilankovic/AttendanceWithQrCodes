@@ -12,6 +12,12 @@ namespace AttendanceWithQrCodes.Profiles
                 .ForMember(
                     dest => dest.Index,
                     src => src.MapFrom(s => s.StudentIndex))
+                .ForMember(
+                    dest => dest.Latitude,
+                    src => src.Ignore())
+                .ForMember(
+                    dest => dest.Longitude,
+                    src => src.Ignore())
                 .ReverseMap();
             CreateMap<StudentAttendance, StudentAttendanceDetailsDto>()
                 .ReverseMap();
