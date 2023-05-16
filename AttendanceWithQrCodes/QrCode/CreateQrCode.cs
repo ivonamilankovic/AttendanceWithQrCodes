@@ -6,10 +6,16 @@ namespace AttendanceWithQrCodes.QrCode
     {
         public CreateQrCode() { }
 
+        /// <summary>
+        /// Generates qr code object and image.
+        /// </summary>
+        /// <param name="time"></param>
+        /// <param name="lectureId"></param>
+        /// <returns>qr code object</returns>
         public Models.QrCode GenerateQrCode(DateTime time, int lectureId)
         {
             Models.QrCode qrCode = new Models.QrCode();
-            string data = "lecture id: " + lectureId;
+            string data = lectureId.ToString();
             string img = "qr-" + Guid.NewGuid() + ".png";
             string domian = AppDomain.CurrentDomain.BaseDirectory;
             string[] domianParts = domian.Split("bin");
