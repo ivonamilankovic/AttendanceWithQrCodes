@@ -1,14 +1,13 @@
 ﻿using AttendanceWithQrCodes.Data;
+using static AttendanceWithQrCodes.Data.RoleConstants;
 using AttendanceWithQrCodes.Linq;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
 using AttendanceWithQrCodes.QrCode;
 using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Linq;
 using System.Net.Mime;
 
 namespace AttendanceWithQrCodes.Controllers
@@ -44,8 +43,8 @@ namespace AttendanceWithQrCodes.Controllers
                                         .Include(l => l.QrCode)
                                         .Include(l => l.Lecturer)
                                         .Include(l => l.Course)
-                                        .WhereIf(lecturerId != 0, l => l.Lecturer.Id == lecturerId)
-                                        .WhereIf(courseId != 0, l => l.Course.Id == courseId)
+                                        .WhereIf(lecturerId != 0, l => l.LecturerId == lecturerId)
+                                        .WhereIf(courseId != 0, l => l.CourseId == courseId)
                                         .ToListAsync();
             if (!lectures.Any())
             {
@@ -106,7 +105,7 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound("Lecturer does not exist.");
             }
             
-            if(lecturer.Role.Name == "Professor")
+            if(lecturer.Role.Name == ProfessorRole)
             {
                 bool hasThisCourse = await _context.Courses.AnyAsync(c => c.ProfessorId == lectureDto.LecturerId && c.Id == lectureDto.CourseId);
                 if (!hasThisCourse)
@@ -114,7 +113,7 @@ namespace AttendanceWithQrCodes.Controllers
                     return BadRequest("This lecturer does not teach this course.");
                 }
             }
-            else if(lecturer.Role.Name == "Assistant")
+            else if(lecturer.Role.Name == AssistantRole)
             {
                 bool hasThisCourse = await _context.Courses.AnyAsync(c => c.AssistantId == lectureDto.LecturerId && c.Id == lectureDto.CourseId);
                 if (!hasThisCourse)
@@ -219,7 +218,13 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound();
             }
 
+            Models.QrCode? qrToDelete = lecture.QrCode;
+            lecture.QrCode = null;
             lecture.Date = DateTime.Now;
+            if (qrToDelete != null)
+            {
+                _context.QrCodes.Remove(qrToDelete);
+            }
             await _context.SaveChangesAsync();
 
             Models.QrCode qrCode = _createQrCode.GenerateQrCode(lecture.Date, lecture.Id);
@@ -253,10 +258,23 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 return NotFound();
             }
+            Models.QrCode? qr = lecture.QrCode;
             int cId = lecture.Course.Id;
             lecture.QrCode = null;
             lecture.Lecturer = null;
             lecture.Course = null;
+            if (qr != null)
+            {
+                _context.QrCodes.Remove(qr);
+            }
+            IList<StudentAttendance> attendances = await _context.StudentAttendances
+                                                .Include(a => a.Lecture)
+                                                .Where(a => a.LectureId == id)
+                                                .ToListAsync();
+            foreach(StudentAttendance a in attendances)
+            {
+                _context.StudentAttendances.Remove(a);
+            }
             await _context.SaveChangesAsync();
 
             Course? course = await _context.Courses.SingleOrDefaultAsync(c => c.Id == cId);

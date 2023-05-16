@@ -1,4 +1,6 @@
 ﻿using AttendanceWithQrCodes.Data;
+using static AttendanceWithQrCodes.Data.RoleConstants;
+using AttendanceWithQrCodes.HelperMethods;
 using AttendanceWithQrCodes.Linq;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
@@ -6,7 +8,6 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
-using System.Collections.Generic;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -18,10 +19,14 @@ namespace AttendanceWithQrCodes.Controllers
     {
         private readonly Context _context;
         private readonly IMapper _mapper;
-        public CourseController(Context context, IMapper mapper)
+        private readonly HttpClient _httpClient;
+        private readonly IGenerateAppBaseUrl _appBaseUrl;
+        public CourseController(Context context, IMapper mapper, IHttpClientFactory httpClientFactory, IGenerateAppBaseUrl appBaseUrl)
         {
             _context = context;
             _mapper = mapper;
+            _httpClient = httpClientFactory.CreateClient();
+            _appBaseUrl = appBaseUrl;
         }
 
         /// <summary>
@@ -36,8 +41,8 @@ namespace AttendanceWithQrCodes.Controllers
             IList<Course> courses = await _context.Courses
                                          .Include(c => c.Assistant)
                                          .Include(c => c.Professor)
-                                         .WhereIf(professorId != 0, c => c.Professor.Id == professorId)
-                                         .WhereIf(assistantId != 0, c => c.Assistant.Id == assistantId)
+                                         .WhereIf(professorId != 0, c => c.ProfessorId == professorId)
+                                         .WhereIf(assistantId != 0, c => c.AssistantId == assistantId)
                                          .ToListAsync();
             if (!courses.Any())
             {
@@ -88,6 +93,10 @@ namespace AttendanceWithQrCodes.Controllers
 
             filteredCourses = filteredCourses.Distinct().ToList();
             IList<CourseListDto> courseList = _mapper.Map<IList<Course>, IList<CourseListDto>>(filteredCourses);
+            if (!courseList.Any())
+            {
+                return NoContent();
+            }
             return Ok(courseList);
         }
 
@@ -151,7 +160,7 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 return NotFound("User you provided for professor does not exist.");
             }
-            if (professor.Role.Name != "Professor")
+            if (professor.Role.Name != ProfessorRole)
             {
                 return BadRequest("User you provided for professor does not have role of professor.");
             }
@@ -167,7 +176,7 @@ namespace AttendanceWithQrCodes.Controllers
                 {
                     return NotFound("User you provided for assistant does not exist.");
                 }
-                if (assistant.Role.Name != "Assistant")
+                if (assistant.Role.Name != AssistantRole)
                 {
                     return BadRequest("User you provided for assistant does not have role of assistant.");
                 }
@@ -198,26 +207,26 @@ namespace AttendanceWithQrCodes.Controllers
             _context.Courses.Add(course);
             await _context.SaveChangesAsync();
 
-            foreach(CourseLanguageIds languageId in courseDto.CourseLanguages)
+            foreach(int languageId in courseDto.CourseLanguages)
             {
                 CourseLanguage cl = new CourseLanguage
                 {
                     CourseId = course.Id,
-                    StudyLanguageId = languageId.Id
+                    StudyLanguageId = languageId
                 };
                 _context.CoursesLanguages.Add(cl);
             }
 
-            foreach (CourseStudyProfilesIds profileId in courseDto.CourseStudyProfiles)
+            foreach (int profileId in courseDto.CourseStudyProfiles)
             {
                 CourseStudyProfile cp = new CourseStudyProfile
                 {
                     CourseId = course.Id,
-                    StudyProfileId = profileId.Id
+                    StudyProfileId = profileId
                 };
                 _context.CoursesStudyProfiles.Add(cp);
             }
-
+            
             await _context.SaveChangesAsync();
 
             course.CourseLanguages = await _context.CoursesLanguages
@@ -261,7 +270,7 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 return NotFound("User you provided for professor does not exist.");
             }
-            if (professor.Role.Name != "Professor")
+            if (professor.Role.Name != ProfessorRole)
             {
                 return BadRequest("User you provided for professor does not have role of professor.");
             }
@@ -277,7 +286,7 @@ namespace AttendanceWithQrCodes.Controllers
                 {
                     return NotFound("User you provided for assistant does not exist.");
                 }
-                if (assistant.Role.Name != "Assistant")
+                if (assistant.Role.Name != AssistantRole)
                 {
                     return BadRequest("User you provided for assistant does not have role of assistant.");
                 }
@@ -325,12 +334,12 @@ namespace AttendanceWithQrCodes.Controllers
                                     .Where(cp => cp.CourseId == id)
                                     .ToListAsync();
             
-            foreach (CourseLanguageIds languageId in courseDto.CourseLanguages)
+            foreach (int languageId in courseDto.CourseLanguages)
             {
                 CourseLanguage cl = new CourseLanguage
                 {
                     CourseId = id,
-                    StudyLanguageId = languageId.Id
+                    StudyLanguageId = languageId
                 };
 
                 if (!course.CourseLanguages.Any(c => c.StudyLanguageId == cl.StudyLanguageId))
@@ -340,18 +349,18 @@ namespace AttendanceWithQrCodes.Controllers
             }
             foreach (CourseLanguage language in course.CourseLanguages)
             {
-                if (!courseDto.CourseLanguages.Any(cl => cl.Id == language.StudyLanguageId))
+                if (!courseDto.CourseLanguages.Any(cl => cl == language.StudyLanguageId))
                 {
                     _context.CoursesLanguages.Remove(language);
                 }
             }
 
-            foreach (CourseStudyProfilesIds profileId in courseDto.CourseStudyProfiles)
+            foreach (int profileId in courseDto.CourseStudyProfiles)
             {
                 CourseStudyProfile cp = new CourseStudyProfile
                 {
                     CourseId = id,
-                    StudyProfileId = profileId.Id
+                    StudyProfileId = profileId
                 };
 
                 if (!course.CourseStudyProfiles.Any(c => c.StudyProfileId == cp.StudyProfileId))
@@ -361,7 +370,7 @@ namespace AttendanceWithQrCodes.Controllers
             }
             foreach (CourseStudyProfile profile in course.CourseStudyProfiles)
             {
-                if (!courseDto.CourseStudyProfiles.Any(cl => cl.Id == profile.StudyProfileId))
+                if (!courseDto.CourseStudyProfiles.Any(cp => cp == profile.StudyProfileId))
                 {
                     _context.CoursesStudyProfiles.Remove(profile);
                 }
@@ -415,6 +424,19 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 _context.CoursesStudyProfiles.Remove(profile);
             }
+
+            IList<Lecture> lectures = await _context.Lectures
+                                    .Include(l => l.Course)
+                                    .Where(l => l.CourseId == id)
+                                    .ToListAsync();
+            
+            foreach(Lecture l in lectures)
+            {
+                HttpResponseMessage response = await _httpClient.DeleteAsync(_appBaseUrl.GetAppBaseUrl() + "/api/Lecture/" + l.Id);
+                response.EnsureSuccessStatusCode();
+            }
+
+            await _context.SaveChangesAsync();
             _context.Courses.Remove(course);
             await _context.SaveChangesAsync();
 

@@ -1,4 +1,5 @@
 using AttendanceWithQrCodes.Data;
+using AttendanceWithQrCodes.HelperMethods;
 using AttendanceWithQrCodes.QrCode;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -19,6 +20,9 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddSingleton<ICreateQrCode, CreateQrCode>();
+builder.Services.AddSingleton<IGenerateAppBaseUrl, GenerateAppBaseUrl>();
+builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 

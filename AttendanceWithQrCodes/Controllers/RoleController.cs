@@ -1,4 +1,5 @@
 ﻿using AttendanceWithQrCodes.Data;
+using static AttendanceWithQrCodes.Data.RoleConstants;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
 using AutoMapper;
@@ -116,6 +117,11 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound();
             }
 
+            if(role.Name == DefaultRole)
+            {
+                return BadRequest("Can't update default role.");
+            }
+
             _mapper.Map<RoleDto, Role>(roleDto, role);
             await _context.SaveChangesAsync();
             return Ok(role);
@@ -129,12 +135,29 @@ namespace AttendanceWithQrCodes.Controllers
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Delete(int id)
         {
             Role? role = await _context.Roles.SingleOrDefaultAsync(r => r.Id == id);
             if (role == null)
             {
                 return NotFound();
+            }
+            
+            if (role.Name == DefaultRole)
+            {
+                return BadRequest("Can't delete default role.");
+            }
+
+            Role? defaultRole = await _context.Roles.SingleOrDefaultAsync(r => r.Name == DefaultRole);
+            if(defaultRole == null)
+            {
+                return NotFound("Default role (\"User\") not found. Please make one to be able to delete others.");
+            }
+            IList<User> users = await _context.Users.Where(u => u.RoleId == id).ToListAsync();
+            foreach(User u in users)
+            {
+                u.RoleId = defaultRole.Id;
             }
 
             _context.Roles.Remove(role);

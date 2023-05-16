@@ -16,21 +16,10 @@ namespace AttendanceWithQrCodes.Models.DTOs
         public int? AssistantId { get; set; }
         [Required]
         [NotMapped]
-        public IList<CourseLanguageIds> CourseLanguages { get; set; } = default!;
+        public int[] CourseLanguages { get; set; } = default!;
         [Required]
         [NotMapped]
-        public IList<CourseStudyProfilesIds> CourseStudyProfiles { get; set; } = default!;
-    }
-
-    public class CourseLanguageIds
-    {
-        [Required]
-        public int Id { get; set; } = default!;
-    }
-    public class CourseStudyProfilesIds
-    {
-        [Required]
-        public int Id { get; set; } = default!;
+        public int[] CourseStudyProfiles { get; set; } = default!;
     }
 
 }
