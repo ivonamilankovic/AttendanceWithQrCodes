@@ -10,6 +10,8 @@ namespace AttendanceWithQrCodes.Profiles
         {
             CreateMap<UserChangePasswordDto, User>()
                 .ReverseMap();
+            CreateMap<UserLoginDto, User>()
+                .ReverseMap();
             CreateMap<UserCreateDto, User>()
                 .ReverseMap();
             CreateMap<UserUpdateDto, User>()

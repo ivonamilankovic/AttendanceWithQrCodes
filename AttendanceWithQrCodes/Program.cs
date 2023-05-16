@@ -1,5 +1,6 @@
 using AttendanceWithQrCodes.Data;
 using AttendanceWithQrCodes.HelperMethods;
+using AttendanceWithQrCodes.Models.Options;
 using AttendanceWithQrCodes.QrCode;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +30,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 1safsfsdfdfd\"",
+        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer tokenstring\"",
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement()
@@ -50,6 +51,8 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddSingleton<ICreateQrCode, CreateQrCode>();
 builder.Services.AddSingleton<IGenerateAppBaseUrl, GenerateAppBaseUrl>();
+builder.Services.AddSingleton<IJwtHelper, JwtHelper>();
+builder.Services.AddSingleton<IFetchCurrentUser, FetchCurrentUser>();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(opt =>
@@ -65,6 +68,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"]))
     };
 });
+
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JWT"));
 
 var app = builder.Build();
 
