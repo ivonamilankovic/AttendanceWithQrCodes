@@ -7,8 +7,6 @@ namespace AttendanceWithQrCodes.Models.DTOs
         [Required]
         public int Index { get; set; } = default!;
         [Required]
-        public string MacAddress { get; set; } = default!;
-        [Required]
         public int UserId { get; set; } = default!;
         [Required]
         public int StudyProfileId { get; set; } = default!;

@@ -93,14 +93,7 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 return NotFound("Student not found.");
             }
-            if (!attendanceDto.MacAddress.IsNullOrEmpty())
-            {
-                if (student.MacAddress != attendanceDto.MacAddress)
-                {
-                    return BadRequest("Access from different device.");
-                }
-            }
-
+            
             Lecture? lecture = await _context.Lectures
                                 .Include(l => l.Course)
                                 .Include(l => l.Lecturer)

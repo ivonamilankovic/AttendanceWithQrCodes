@@ -8,8 +8,6 @@ namespace AttendanceWithQrCodes.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int Index { get; set; }
-        [Required]
-        public string MacAddress { get; set; } = default!;
 
         [ForeignKey("UserId")]
         public int? UserId { get; set; }

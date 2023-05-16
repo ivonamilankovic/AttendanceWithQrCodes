@@ -9,7 +9,5 @@ namespace AttendanceWithQrCodes.Models.DTOs
         public int LectureId { get; set; } = default!;
         [Required]
         public int Index { get; set; } = default!;
-        [NotMapped]
-        public string MacAddress { get; set; } = default!;
     }
 }
