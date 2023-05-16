@@ -2,11 +2,12 @@
 using AttendanceWithQrCodes.Linq;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
+using static AttendanceWithQrCodes.Data.RoleConstants;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -35,6 +36,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="languageId"></param>
         /// <returns></returns>
         [HttpGet]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll(int lectureId, int studentIndex, int courseId, int lecturerId, int profileId, int languageId)
@@ -70,6 +72,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="attendanceDto"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole + "," + StudentRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -139,6 +142,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="studentIndex"></param>
         /// <returns></returns>
         [HttpPut("{id}/{studentIndex}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(int id, int studentIndex) 
@@ -166,6 +170,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpDelete("{id}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)

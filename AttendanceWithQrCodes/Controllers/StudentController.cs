@@ -8,6 +8,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -34,6 +35,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll(int studyProfile, int studyLanguage)
@@ -60,6 +62,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="index"></param>
         /// <returns></returns>
         [HttpGet("{index}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole + "," + StudentRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(int index)
@@ -84,6 +87,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="studentDto"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles = AdminRole + "," + StudentRole + "," + DefaultRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Create(StudentInfoCreateDto studentDto)
@@ -106,6 +110,10 @@ namespace AttendanceWithQrCodes.Controllers
             }
 
             User? user = await _context.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == studentDto.UserId);
+            if(user.Role.Name == DefaultRole)
+            {
+                user.Role = await _context.Roles.SingleOrDefaultAsync(r => r.Name == DefaultRole);
+            }
             if (user.Role.Name != StudentRole)
             {
                 return BadRequest("User you provided is not student. Choose another user.");
@@ -140,6 +148,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="studentDto"></param>
         /// <returns></returns>
         [HttpPut("{index}")]
+        [Authorize(Roles = AdminRole + "," + StudentRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -187,6 +196,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="index"></param>
         /// <returns></returns>
         [HttpDelete("{index}")]
+        [Authorize(Roles = AdminRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int index)

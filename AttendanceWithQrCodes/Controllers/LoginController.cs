@@ -2,10 +2,10 @@
 using AttendanceWithQrCodes.HelperMethods;
 using AttendanceWithQrCodes.Models;
 using AttendanceWithQrCodes.Models.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
-using System.Security.Claims;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -30,6 +30,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="userLoginDto"></param>
         /// <returns>jwt token</returns>
         [HttpPost]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> LoginAsync(UserLoginDto userLoginDto)
@@ -56,6 +57,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="token"></param>
         /// <returns>User</returns>
         [HttpGet("Validate")]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> ValidateToken(string token)
