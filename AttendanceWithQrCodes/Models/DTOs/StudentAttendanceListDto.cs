@@ -20,6 +20,5 @@
         public DateTime Date { get; set; }
         public CourseNameDto Course { get; set; } = default!;
         public UserNameEmailDto Lecturer { get; set; } = default!;
-        public QrCodeDto QrCode { get; set; } = default!;
     }
 }

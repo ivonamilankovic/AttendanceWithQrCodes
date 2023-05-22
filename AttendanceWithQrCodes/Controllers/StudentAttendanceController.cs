@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using AttendanceWithQrCodes.HelperMethods;
+using ClosedXML.Excel;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -44,22 +45,8 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll(int lectureId, int studentIndex, int courseId, int lecturerId, int profileId, int languageId)
         {
-            IList<StudentAttendance> attendances = await _context.StudentAttendances
-                                    .Include(a => a.Student)
-                                    .Include(a => a.Student.User)
-                                    .Include(a => a.Student.StudyLanguage)
-                                    .Include(a => a.Student.StudyProfile)
-                                    .Include(a => a.Lecture)
-                                    .Include(a => a.Lecture.Course)
-                                    .Include(a => a.Lecture.Lecturer)
-                                    .Include(a => a.Lecture.QrCode)
-                                    .WhereIf(studentIndex != 0, a => a.StudentIndex == studentIndex)
-                                    .WhereIf(profileId != 0, a => a.Student.StudyProfileId == profileId)
-                                    .WhereIf(languageId != 0, a => a.Student.StudyLanguageId == languageId)
-                                    .WhereIf(lectureId != 0, a => a.LectureId == lectureId)
-                                    .WhereIf(lecturerId != 0, a => a.Lecture.LecturerId == lecturerId)
-                                    .WhereIf(courseId != 0, a => a.Lecture.CourseId == courseId)
-                                    .ToListAsync();
+            IList<StudentAttendance> attendances = await FetchAllAttendances(lectureId, courseId, lecturerId, profileId, languageId, studentIndex);
+            
             if (!attendances.Any())
             {
                 return NoContent();
@@ -67,6 +54,77 @@ namespace AttendanceWithQrCodes.Controllers
 
             IList<StudentAttendanceListDto> attendanceDetailsDtos = _mapper.Map<IList<StudentAttendance>, IList<StudentAttendanceListDto>>(attendances);
             return Ok(attendanceDetailsDtos);
+        }
+
+        /// <summary>
+        /// Generates .xlsx file with student attendances for download.
+        /// </summary>
+        /// <param name="lectureId"></param>
+        /// <param name="courseId"></param>
+        /// <param name="lecturerId"></param>
+        /// <param name="profileId"></param>
+        /// <param name="languageId"></param>
+        /// <returns></returns>
+        [HttpGet("excel")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<FileContentResult> GetAllAsExcelFile(int lectureId, int courseId, int lecturerId, int profileId, int languageId)
+        {
+            IList<StudentAttendance> attendances = await FetchAllAttendances(lectureId, courseId, lecturerId, profileId, languageId);
+            
+            IList<StudentAttendanceForExcelDto> attendanceDtos = _mapper.Map<IList<StudentAttendance>, IList<StudentAttendanceForExcelDto>>(attendances);
+            
+            XLWorkbook workbook = new XLWorkbook();
+            IXLWorksheet sheet = workbook.Worksheets.Add("StudentAttendances");
+            int row = 1;
+            sheet.Cell(row, 1).Value = "No.";
+            sheet.Cell(row, 2).Value = "Index";
+            sheet.Cell(row, 3).Value = "Student";
+            sheet.Cell(row, 4).Value = "Present";
+            sheet.Cell(row, 5).Value = "DateOfAttendance";
+            sheet.Cell(row, 6).Value = "CourseName";
+            sheet.Cell(row, 7).Value = "LectureName";
+            sheet.Cell(row, 8).Value = "Lecturer";
+
+            int no = 1;
+            foreach (StudentAttendanceForExcelDto a in attendanceDtos)
+            {
+                row++;
+                sheet.Cell(row, 1).Value = no;
+                sheet.Cell(row, 2).Value = a.Index;
+                sheet.Cell(row, 3).Value = a.Student;
+                sheet.Cell(row, 4).Value = a.Present;
+                sheet.Cell(row, 5).Value = a.DateOfAttendance;
+                sheet.Cell(row, 6).Value = a.CourseName;
+                sheet.Cell(row, 7).Value = a.LectureName;
+                sheet.Cell(row, 8).Value = a.Lecturer;
+                no++;
+            }
+            
+            sheet.Style.Alignment.SetHorizontal(XLAlignmentHorizontalValues.Center);
+            sheet.Style.Alignment.SetVertical(XLAlignmentVerticalValues.Center);
+            sheet.Row(1).Style.Fill.BackgroundColor = XLColor.FromArgb(0xCCC7C6);
+            sheet.Rows(2, no).Style.Fill.BackgroundColor = XLColor.FromArgb(0xF0EAE9);
+            sheet.Row(1).Style.Font.Bold = true;
+            sheet.Row(1).Style.Border.BottomBorder = XLBorderStyleValues.Thick;
+            sheet.Rows(2,row).Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+            sheet.Columns().Width = 25;
+            sheet.Column(1).Width = 6;
+            sheet.Column(2).Width = 15;
+            sheet.Column(4).Width = 15;
+            sheet.Column(1).Style.Font.Bold = true;
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                workbook.SaveAs(ms);
+                byte[] content = ms.ToArray();
+                string fileName = "StudentAttendances-" + Guid.NewGuid() + ".xlsx";
+
+                return File(
+                    content,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName);
+            }
         }
 
         /// <summary>
@@ -197,5 +255,36 @@ namespace AttendanceWithQrCodes.Controllers
 
             return Ok();
         }
-    }
+
+        /// <summary>
+        /// Help method to get list of attendances.
+        /// </summary>
+        /// <param name="lectureId"></param>
+        /// <param name="studentIndex"></param>
+        /// <param name="courseId"></param>
+        /// <param name="lecturerId"></param>
+        /// <param name="profileId"></param>
+        /// <param name="languageId"></param>
+        /// <returns>List of StudentAttendance objects.</returns>
+        public async Task<IList<StudentAttendance>> FetchAllAttendances(int lectureId, int courseId, int lecturerId, int profileId, int languageId, int studentIndex = 0)
+        {
+            IList<StudentAttendance> attendances = await _context.StudentAttendances
+                                    .Include(a => a.Student)
+                                    .Include(a => a.Student.User)
+                                    .Include(a => a.Student.StudyLanguage)
+                                    .Include(a => a.Student.StudyProfile)
+                                    .Include(a => a.Lecture)
+                                    .Include(a => a.Lecture.Course)
+                                    .Include(a => a.Lecture.Lecturer)
+                                    .WhereIf(studentIndex != 0, a => a.StudentIndex == studentIndex)
+                                    .WhereIf(profileId != 0, a => a.Student.StudyProfileId == profileId)
+                                    .WhereIf(languageId != 0, a => a.Student.StudyLanguageId == languageId)
+                                    .WhereIf(lectureId != 0, a => a.LectureId == lectureId)
+                                    .WhereIf(lecturerId != 0, a => a.Lecture.LecturerId == lecturerId)
+                                    .WhereIf(courseId != 0, a => a.Lecture.CourseId == courseId)
+                                    .ToListAsync();
+            return attendances;
+        }
+
+        }
 }
