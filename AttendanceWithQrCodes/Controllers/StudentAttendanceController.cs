@@ -128,6 +128,57 @@ namespace AttendanceWithQrCodes.Controllers
         }
 
         /// <summary>
+        /// Calculates percentage of presence of student in one course.
+        /// </summary>
+        /// <param name="studentIndex"></param>
+        /// <param name="courseId"></param>
+        /// <returns></returns>
+        [HttpGet("Presence/{studentIndex}/{courseId}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetCalculatedPresence(int studentIndex, int courseId)
+        {
+            bool studentExist = await _context.StudentInformations.AnyAsync(s => s.Index == studentIndex);
+            if (!studentExist)
+            {
+                return NotFound("Student doesn't exist.");
+            }
+
+            Course? course = await _context.Courses.SingleOrDefaultAsync(c => c.Id == courseId);
+            if(course == null)
+            {
+                return NotFound("Course doesn't exist.");
+            }
+
+            int totalNeededLectures = course.LecturesNumForProfessor + (int)course.LecturesNumForAssistent;
+            int totalTakenLectures = course.TotalTakenLectures;
+
+            IList<StudentAttendance> attendances = await FetchAllAttendances(courseId: courseId, studentIndex: studentIndex);
+            int totalPresentLectures = 0;
+            foreach (StudentAttendance s in attendances)
+            {
+                if (s.Present)
+                {
+                    totalPresentLectures++;
+                }
+            }
+
+            double attendancePercentage = ((double)totalPresentLectures / (double)totalTakenLectures) * 100.0;
+            int lecturesLeft = totalNeededLectures - totalTakenLectures;
+
+            StudentAttendancePresenceInfoDto presenceInfoDto = new StudentAttendancePresenceInfoDto
+            {
+                TotalNeededLectures = totalNeededLectures,
+                TotalTakenLectures = totalTakenLectures,
+                TotalPresentLectures = totalPresentLectures,
+                AttendancePercentage = Math.Round(attendancePercentage, 2)
+            };
+
+            return Ok(presenceInfoDto);
+        }
+
+        /// <summary>
         /// Creates student registration to lecture.
         /// </summary>
         /// <param name="attendanceDto"></param>
@@ -268,7 +319,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="profileId"></param>
         /// <param name="languageId"></param>
         /// <returns>List of StudentAttendance objects.</returns>
-        public async Task<IList<StudentAttendance>> FetchAllAttendances(int lectureId, int courseId, int lecturerId, int profileId, int languageId, int studentIndex = 0)
+        public async Task<IList<StudentAttendance>> FetchAllAttendances(int lectureId = 0, int courseId = 0, int lecturerId = 0, int profileId = 0, int languageId = 0, int studentIndex = 0)
         {
             IList<StudentAttendance> attendances = await _context.StudentAttendances
                                     .Include(a => a.Student)
