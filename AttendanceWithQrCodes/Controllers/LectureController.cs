@@ -225,6 +225,11 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound();
             }
 
+            if(lecture.Date.Date != DateTime.Now.Date)
+            {
+                return BadRequest("You can't make new qr code because this class was not today.");
+            }
+            
             Models.QrCode? qrToDelete = lecture.QrCode;
             lecture.QrCode = null;
             lecture.Date = DateTime.Now;

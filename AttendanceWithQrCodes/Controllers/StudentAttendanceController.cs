@@ -167,6 +167,8 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 return NotFound("Lecture not found.");
             }
+            
+            DateTime now = DateTime.Now;
 
             if (attendanceDto.Latitude > 0 && attendanceDto.Longitude > 0)
             {
@@ -175,21 +177,21 @@ namespace AttendanceWithQrCodes.Controllers
                 {
                     return BadRequest("Your location is not acceptable.");
                 }
+
+
+                TimeSpan timeDifference = now - lecture.QrCode.ExpiresAt;
+                if (timeDifference.TotalMinutes >= 5)
+                {
+                    return BadRequest("Qr code has expired. You can't be registered to this lecture.");
+                }
             }
 
             bool attendanceSubmited = await _context.StudentAttendances
-                                    .AnyAsync(a => a.StudentIndex == attendanceDto.Index    
-                                    && a.LectureId == attendanceDto.LectureId);
+                                     .AnyAsync(a => a.StudentIndex == attendanceDto.Index
+                                     && a.LectureId == attendanceDto.LectureId);
             if (attendanceSubmited)
             {
-                return BadRequest("You have already submited to this lecture."); 
-            }
-
-            DateTime now = DateTime.Now;
-            TimeSpan timeDifference = now - lecture.QrCode.ExpiresAt;
-            if (timeDifference.TotalMinutes >= 5)
-            {
-                return BadRequest("Qr code has expired. You can't be registered to this lecture.");
+                return BadRequest("You have already submited to this lecture.");
             }
 
             StudentAttendance attendance = _mapper.Map<StudentAttendanceCreateDto, StudentAttendance>(attendanceDto);
