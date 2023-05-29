@@ -86,6 +86,7 @@ namespace AttendanceWithQrCodes.Controllers
             sheet.Cell(row, 6).Value = "CourseName";
             sheet.Cell(row, 7).Value = "LectureName";
             sheet.Cell(row, 8).Value = "Lecturer";
+            sheet.Cell(row, 9).Value = "Notes";
 
             int no = 1;
             foreach (StudentAttendanceForExcelDto a in attendanceDtos)
@@ -99,6 +100,7 @@ namespace AttendanceWithQrCodes.Controllers
                 sheet.Cell(row, 6).Value = a.CourseName;
                 sheet.Cell(row, 7).Value = a.LectureName;
                 sheet.Cell(row, 8).Value = a.Lecturer;
+                sheet.Cell(row, 9).Value = a.Notes;
                 no++;
             }
             
