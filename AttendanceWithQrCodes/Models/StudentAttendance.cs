@@ -19,5 +19,8 @@ namespace AttendanceWithQrCodes.Models
         [ForeignKey("LectureId")]
         public int? LectureId { get; set; }
         public Lecture? Lecture { get; set; }
+
+        [Column(TypeName = "ntext")]
+        public string? Notes { get; set; } = default!;
     }
 }

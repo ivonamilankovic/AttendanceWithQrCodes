@@ -10,6 +10,7 @@ using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using AttendanceWithQrCodes.HelperMethods;
 using ClosedXML.Excel;
+using Microsoft.IdentityModel.Tokens;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -264,24 +265,47 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <param name="studentIndex"></param>
         /// <returns></returns>
-        [HttpPut("{id}/{studentIndex}")]
+        [HttpPut("{id}/Presence/{studentIndex}")]
         [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Update(int id, int studentIndex) 
+        public async Task<IActionResult> UpdatePresence(int id, int studentIndex) 
         {
-            bool studentValid = await _context.StudentInformations.AnyAsync(s => s.Index == studentIndex);
-            if (!studentValid)
-            {
-                return NotFound("Student does not exist.");
-            }
-
-            StudentAttendance? attendance = await _context.StudentAttendances.SingleOrDefaultAsync(a => a.Id == id);
+            StudentAttendance? attendance = await _context.StudentAttendances.SingleOrDefaultAsync(a => a.Id == id && a.StudentIndex == studentIndex);
             if(attendance == null)
             {
-                return NotFound("This student did not attend this lecture.");
+                return NotFound();
             }
             attendance.Present = !attendance.Present;
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        /// <summary>
+        /// Updates students notes by their index.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="studentIndex"></param>
+        /// <returns></returns>
+        [HttpPut("{id}/Notes/{studentIndex}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateNotes(int id, int studentIndex, StudentAttendanceNotesDto notesDto)
+        {
+            StudentAttendance? attendance = await _context.StudentAttendances.SingleOrDefaultAsync(a => a.Id == id && a.StudentIndex == studentIndex);
+            if (attendance == null)
+            {
+                return NotFound();
+            }
+
+            if (notesDto.Notes.IsNullOrEmpty())
+            {
+                return BadRequest("Please provide some notes.");
+            }
+            attendance.Notes = notesDto.Notes;
             await _context.SaveChangesAsync();
 
             return Ok();
