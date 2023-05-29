@@ -9,5 +9,6 @@
         public string CourseName { get; set; } = default!;
         public string LectureName { get; set; } = default!;
         public string Lecturer { get; set; } = default!;
+        public string Notes { get; set; } = default!;
     }
 }

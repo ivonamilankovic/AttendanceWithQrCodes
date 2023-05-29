@@ -10,6 +10,7 @@ using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
 using AttendanceWithQrCodes.HelperMethods;
 using ClosedXML.Excel;
+using Microsoft.IdentityModel.Tokens;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -85,6 +86,7 @@ namespace AttendanceWithQrCodes.Controllers
             sheet.Cell(row, 6).Value = "CourseName";
             sheet.Cell(row, 7).Value = "LectureName";
             sheet.Cell(row, 8).Value = "Lecturer";
+            sheet.Cell(row, 9).Value = "Notes";
 
             int no = 1;
             foreach (StudentAttendanceForExcelDto a in attendanceDtos)
@@ -98,6 +100,7 @@ namespace AttendanceWithQrCodes.Controllers
                 sheet.Cell(row, 6).Value = a.CourseName;
                 sheet.Cell(row, 7).Value = a.LectureName;
                 sheet.Cell(row, 8).Value = a.Lecturer;
+                sheet.Cell(row, 9).Value = a.Notes;
                 no++;
             }
             
@@ -125,6 +128,57 @@ namespace AttendanceWithQrCodes.Controllers
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     fileName);
             }
+        }
+
+        /// <summary>
+        /// Calculates percentage of presence of student in one course.
+        /// </summary>
+        /// <param name="studentIndex"></param>
+        /// <param name="courseId"></param>
+        /// <returns></returns>
+        [HttpGet("Presence/{studentIndex}/{courseId}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetCalculatedPresence(int studentIndex, int courseId)
+        {
+            bool studentExist = await _context.StudentInformations.AnyAsync(s => s.Index == studentIndex);
+            if (!studentExist)
+            {
+                return NotFound("Student doesn't exist.");
+            }
+
+            Course? course = await _context.Courses.SingleOrDefaultAsync(c => c.Id == courseId);
+            if(course == null)
+            {
+                return NotFound("Course doesn't exist.");
+            }
+
+            int totalNeededLectures = course.LecturesNumForProfessor + (int)course.LecturesNumForAssistent;
+            int totalTakenLectures = course.TotalTakenLectures;
+
+            IList<StudentAttendance> attendances = await FetchAllAttendances(courseId: courseId, studentIndex: studentIndex);
+            int totalPresentLectures = 0;
+            foreach (StudentAttendance s in attendances)
+            {
+                if (s.Present)
+                {
+                    totalPresentLectures++;
+                }
+            }
+
+            double attendancePercentage = ((double)totalPresentLectures / (double)totalTakenLectures) * 100.0;
+            int lecturesLeft = totalNeededLectures - totalTakenLectures;
+
+            StudentAttendancePresenceInfoDto presenceInfoDto = new StudentAttendancePresenceInfoDto
+            {
+                TotalNeededLectures = totalNeededLectures,
+                TotalTakenLectures = totalTakenLectures,
+                TotalPresentLectures = totalPresentLectures,
+                AttendancePercentage = Math.Round(attendancePercentage, 2)
+            };
+
+            return Ok(presenceInfoDto);
         }
 
         /// <summary>
@@ -167,6 +221,8 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 return NotFound("Lecture not found.");
             }
+            
+            DateTime now = DateTime.Now;
 
             if (attendanceDto.Latitude > 0 && attendanceDto.Longitude > 0)
             {
@@ -175,21 +231,21 @@ namespace AttendanceWithQrCodes.Controllers
                 {
                     return BadRequest("Your location is not acceptable.");
                 }
+
+
+                TimeSpan timeDifference = now - lecture.QrCode.ExpiresAt;
+                if (timeDifference.TotalMinutes >= 5)
+                {
+                    return BadRequest("Qr code has expired. You can't be registered to this lecture.");
+                }
             }
 
             bool attendanceSubmited = await _context.StudentAttendances
-                                    .AnyAsync(a => a.StudentIndex == attendanceDto.Index    
-                                    && a.LectureId == attendanceDto.LectureId);
+                                     .AnyAsync(a => a.StudentIndex == attendanceDto.Index
+                                     && a.LectureId == attendanceDto.LectureId);
             if (attendanceSubmited)
             {
-                return BadRequest("You have already submited to this lecture."); 
-            }
-
-            DateTime now = DateTime.Now;
-            TimeSpan timeDifference = now - lecture.QrCode.ExpiresAt;
-            if (timeDifference.TotalMinutes >= 5)
-            {
-                return BadRequest("Qr code has expired. You can't be registered to this lecture.");
+                return BadRequest("You have already submited to this lecture.");
             }
 
             StudentAttendance attendance = _mapper.Map<StudentAttendanceCreateDto, StudentAttendance>(attendanceDto);
@@ -211,24 +267,47 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="id"></param>
         /// <param name="studentIndex"></param>
         /// <returns></returns>
-        [HttpPut("{id}/{studentIndex}")]
+        [HttpPut("{id}/Presence/{studentIndex}")]
         [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> Update(int id, int studentIndex) 
+        public async Task<IActionResult> UpdatePresence(int id, int studentIndex) 
         {
-            bool studentValid = await _context.StudentInformations.AnyAsync(s => s.Index == studentIndex);
-            if (!studentValid)
-            {
-                return NotFound("Student does not exist.");
-            }
-
-            StudentAttendance? attendance = await _context.StudentAttendances.SingleOrDefaultAsync(a => a.Id == id);
+            StudentAttendance? attendance = await _context.StudentAttendances.SingleOrDefaultAsync(a => a.Id == id && a.StudentIndex == studentIndex);
             if(attendance == null)
             {
-                return NotFound("This student did not attend this lecture.");
+                return NotFound();
             }
             attendance.Present = !attendance.Present;
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+
+        /// <summary>
+        /// Updates students notes by their index.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="studentIndex"></param>
+        /// <returns></returns>
+        [HttpPut("{id}/Notes/{studentIndex}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateNotes(int id, int studentIndex, StudentAttendanceNotesDto notesDto)
+        {
+            StudentAttendance? attendance = await _context.StudentAttendances.SingleOrDefaultAsync(a => a.Id == id && a.StudentIndex == studentIndex);
+            if (attendance == null)
+            {
+                return NotFound();
+            }
+
+            if (notesDto.Notes.IsNullOrEmpty())
+            {
+                return BadRequest("Please provide some notes.");
+            }
+            attendance.Notes = notesDto.Notes;
             await _context.SaveChangesAsync();
 
             return Ok();
@@ -266,7 +345,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="profileId"></param>
         /// <param name="languageId"></param>
         /// <returns>List of StudentAttendance objects.</returns>
-        public async Task<IList<StudentAttendance>> FetchAllAttendances(int lectureId, int courseId, int lecturerId, int profileId, int languageId, int studentIndex = 0)
+        public async Task<IList<StudentAttendance>> FetchAllAttendances(int lectureId = 0, int courseId = 0, int lecturerId = 0, int profileId = 0, int languageId = 0, int studentIndex = 0)
         {
             IList<StudentAttendance> attendances = await _context.StudentAttendances
                                     .Include(a => a.Student)
