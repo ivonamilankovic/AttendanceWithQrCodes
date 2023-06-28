@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
+using Hangfire;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -20,14 +21,16 @@ namespace AttendanceWithQrCodes.Controllers
     {
         private readonly Context _context;
         private readonly IMapper _mapper;
-        private readonly HttpClient _httpClient;
-        private readonly IGenerateAppBaseUrl _appBaseUrl;
-        public StudentController(Context context, IMapper mapper, HttpClient httpClient, IGenerateAppBaseUrl appBaseUrl)
+        private readonly IFetchAuthHeader _fetchAuthHeader;
+        private readonly IDeletingHelperMethods _deletingHelper;
+        private readonly string _baseUrl;
+        public StudentController(Context context, IMapper mapper, IFetchAuthHeader fetchAuthHeader, IDeletingHelperMethods deletingHelper, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _mapper = mapper;
-            _httpClient = httpClient;
-            _appBaseUrl = appBaseUrl;
+            _fetchAuthHeader = fetchAuthHeader;
+            _deletingHelper = deletingHelper;
+            _baseUrl = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host.Value}";
         }
 
         /// <summary>
@@ -206,20 +209,12 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 return NotFound();
             }
-            
-            IList<StudentAttendance> attendances = await _context.StudentAttendances
-                                                    .Include(a => a.Student)
-                                                    .Where(a => a.StudentIndex == index)
-                                                    .ToListAsync();
-            foreach(StudentAttendance a in attendances)
-            {
-                HttpResponseMessage response = await _httpClient.DeleteAsync(_appBaseUrl.GetAppBaseUrl() + "/api/StudentAttendance/" + a.Id);
-                response.EnsureSuccessStatusCode();
-            }
-            
-            await _context.SaveChangesAsync();
-            _context.StudentInformations.Remove(student);
-            await _context.SaveChangesAsync();
+
+            string authHeaderValue = _fetchAuthHeader.FetchAuthorizationHeaderValue(Request);
+            string apiPath = _baseUrl + "/api/StudentAttendance/";
+
+            BackgroundJob.Enqueue(() => _deletingHelper.DeleteAttendances(index, authHeaderValue, apiPath));
+            BackgroundJob.Enqueue(() => _deletingHelper.DeleteStudentInfo(index));
 
             return Ok();
         }

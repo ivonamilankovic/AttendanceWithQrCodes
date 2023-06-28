@@ -133,14 +133,14 @@ namespace AttendanceWithQrCodes.Controllers
         /// <summary>
         /// Calculates percentage of presence of student in one course.
         /// </summary>
-        /// <param name="studentIndex"></param>
         /// <param name="courseId"></param>
+        /// <param name="studentIndex"></param>
         /// <returns></returns>
-        [HttpGet("Presence/{studentIndex}/{courseId}")]
+        [HttpGet("Presence/{courseId}/{studentIndex}")]
         [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetCalculatedPresence(int studentIndex, int courseId)
+        public async Task<IActionResult> GetCalculatedPresenceOneStudent(int courseId, int studentIndex)
         {
             bool studentExist = await _context.StudentInformations.AnyAsync(s => s.Index == studentIndex);
             if (!studentExist)
@@ -180,7 +180,7 @@ namespace AttendanceWithQrCodes.Controllers
 
             return Ok(presenceInfoDto);
         }
-
+       
         /// <summary>
         /// Creates student registration to lecture.
         /// </summary>

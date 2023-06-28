@@ -2,6 +2,8 @@ using AttendanceWithQrCodes.Data;
 using AttendanceWithQrCodes.HelperMethods;
 using AttendanceWithQrCodes.Models.Options;
 using AttendanceWithQrCodes.QrCode;
+using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -49,10 +51,6 @@ builder.Services.AddSwaggerGen(c =>
         });
 });
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
-builder.Services.AddSingleton<ICreateQrCode, CreateQrCode>();
-builder.Services.AddSingleton<IGenerateAppBaseUrl, GenerateAppBaseUrl>();
-builder.Services.AddSingleton<IJwtHelper, JwtHelper>();
-builder.Services.AddSingleton<ILocationCheck, LocationCheck>();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(opt =>
@@ -68,9 +66,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"]))
     };
 });
+builder.Services.AddHangfire(configuration => configuration
+        .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UseSqlServerStorage(builder.Configuration.GetConnectionString("DatabaseConnection"), new SqlServerStorageOptions
+        {
+            CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+            SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+            QueuePollInterval = TimeSpan.Zero,
+            UseRecommendedIsolationLevel = true,
+            DisableGlobalLocks = true
+        }));
+builder.Services.AddHangfireServer();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("JWT"));
 builder.Services.Configure<LocationOptions>(builder.Configuration.GetSection("Location"));
+
+builder.Services.AddSingleton<ICreateQrCode, CreateQrCode>();
+builder.Services.AddSingleton<IJwtHelper, JwtHelper>();
+builder.Services.AddSingleton<ILocationCheck, LocationCheck>();
+builder.Services.AddSingleton<IFetchAuthHeader, FetchAuthHeader>();
+builder.Services.AddTransient<IDeletingHelperMethods, DeletingHelperMethods>();
 
 var app = builder.Build();
 
@@ -84,5 +101,8 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHangfireDashboard();
+app.UseHangfireDashboard("/hangfire");
+app.UseHangfireServer();
 
 app.Run();
