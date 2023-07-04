@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
 using Microsoft.AspNetCore.Authorization;
+using Hangfire;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -20,14 +21,16 @@ namespace AttendanceWithQrCodes.Controllers
     {
         private readonly Context _context;
         private readonly IMapper _mapper;
-        private readonly HttpClient _httpClient;
-        private readonly IGenerateAppBaseUrl _appBaseUrl;
-        public CourseController(Context context, IMapper mapper, IHttpClientFactory httpClientFactory, IGenerateAppBaseUrl appBaseUrl)
+        private readonly IFetchAuthHeader _fetchAuthHeader;
+        private readonly IDeletingHelperMethods _deletingHelper;
+        private readonly string _baseUrl;
+        public CourseController(Context context, IMapper mapper, IFetchAuthHeader fetchAuthHeader, IDeletingHelperMethods deletingHelper, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _mapper = mapper;
-            _httpClient = httpClientFactory.CreateClient();
-            _appBaseUrl = appBaseUrl;
+            _fetchAuthHeader = fetchAuthHeader;
+            _deletingHelper = deletingHelper;
+            _baseUrl = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host.Value}";
         }
 
         /// <summary>
@@ -415,37 +418,12 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound();
             }
 
-            course.CourseLanguages = await _context.CoursesLanguages
-                                   .Where(cl => cl.CourseId == id)
-                                   .ToArrayAsync();
-            course.CourseStudyProfiles = await _context.CoursesStudyProfiles
-                                .Where(cp => cp.CourseId == id)
-                                .ToArrayAsync();
+            string authHeaderValue = _fetchAuthHeader.FetchAuthorizationHeaderValue(Request);
+            string apiPath = _baseUrl + "/api/Lecture/";
 
-            foreach(CourseLanguage language in course.CourseLanguages)
-            {
-                _context.CoursesLanguages.Remove(language);
-            }
-            foreach(CourseStudyProfile profile in course.CourseStudyProfiles)
-            {
-                _context.CoursesStudyProfiles.Remove(profile);
-            }
-
-            IList<Lecture> lectures = await _context.Lectures
-                                    .Include(l => l.Course)
-                                    .Where(l => l.CourseId == id)
-                                    .ToListAsync();
-            
-            foreach(Lecture l in lectures)
-            {
-                HttpResponseMessage response = await _httpClient.DeleteAsync(_appBaseUrl.GetAppBaseUrl() + "/api/Lecture/" + l.Id);
-                response.EnsureSuccessStatusCode();
-            }
-
-            await _context.SaveChangesAsync();
-            _context.Courses.Remove(course);
-            await _context.SaveChangesAsync();
-
+            BackgroundJob.Enqueue( () => _deletingHelper.DeleteLectures(id, authHeaderValue, apiPath));
+            BackgroundJob.Enqueue( () => _deletingHelper.DeleteCourseLanguagesAndProfiles(id));
+            BackgroundJob.Enqueue( () => _deletingHelper.DeleteCourse(id));
             return Ok();
         }
 
