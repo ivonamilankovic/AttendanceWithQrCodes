@@ -23,11 +23,17 @@ namespace AttendanceWithQrCodes.Controllers
         private readonly Context _context;
         private readonly IMapper _mapper;
         private readonly ILocationCheck _locationCheck;
-        public StudentAttendanceController(Context context, IMapper mapper, ILocationCheck locationCheck)
+        private readonly HttpClient _httpClient;
+        private readonly IFetchAuthHeader _fetchAuthHeader;
+        private readonly string _baseUrl;
+        public StudentAttendanceController(Context context, IMapper mapper, ILocationCheck locationCheck, IHttpClientFactory httpClientFactory, IHttpContextAccessor httpContextAccessor, IFetchAuthHeader fetchAuthHeader)
         {
             _context = context;
             _mapper = mapper;
             _locationCheck = locationCheck;
+            _httpClient = httpClientFactory.CreateClient();
+            _baseUrl = $"{httpContextAccessor.HttpContext.Request.Scheme}://{httpContextAccessor.HttpContext.Request.Host.Value}";
+            _fetchAuthHeader = fetchAuthHeader;
         }
 
         /// <summary>
@@ -168,7 +174,6 @@ namespace AttendanceWithQrCodes.Controllers
             }
 
             double attendancePercentage = ((double)totalPresentLectures / (double)totalTakenLectures) * 100.0;
-            int lecturesLeft = totalNeededLectures - totalTakenLectures;
 
             StudentAttendancePresenceInfoDto presenceInfoDto = new StudentAttendancePresenceInfoDto
             {
@@ -180,7 +185,80 @@ namespace AttendanceWithQrCodes.Controllers
 
             return Ok(presenceInfoDto);
         }
-       
+        
+        /// <summary>
+        /// Calculates percentage of presence of all students in one course.
+        /// </summary>
+        /// <param name="courseId"></param>
+        /// <returns></returns>
+        [HttpGet("Presence/{courseId}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetCalculatedPresenceAllStudents(int courseId)
+        {
+            Course? course = await _context.Courses.SingleOrDefaultAsync(c => c.Id == courseId);
+            if(course == null)
+            {
+                return NotFound("Course doesn't exist.");
+            }
+
+            IList<CourseLanguage> languages = await _context.CoursesLanguages
+                                .Include(cl => cl.StudyLanguage)
+                                .Where(cl => cl.CourseId == course.Id)
+                                .ToArrayAsync();
+            IList<CourseStudyProfile> profiles = await _context.CoursesStudyProfiles
+                                .Include(cp => cp.StudyProfile)
+                                .Where(cp => cp.CourseId == course.Id)
+                                .ToArrayAsync();
+
+            int totalNeededLectures = course.LecturesNumForProfessor + (int)course.LecturesNumForAssistent;
+            int totalTakenLectures = course.TotalTakenLectures;
+
+            IList<StudentInformation> students = await _context.StudentInformations.ToListAsync();
+            int totalStudentsCount = 0;
+            foreach(StudentInformation s in students)
+            {
+                bool profileMatch = profiles.Any(cp => cp.StudyProfileId == s.StudyProfileId);
+                bool languageMatch = languages.Any(cp => cp.StudyLanguageId == s.StudyLanguageId);
+                if(profileMatch && languageMatch)
+                {
+                    totalStudentsCount++;
+                }
+                else
+                {
+                    students.Remove(s);
+                }
+            }
+
+            string authHeaderValue = _fetchAuthHeader.FetchAuthorizationHeaderValue(Request);
+            int totalStudentPresent = 0;
+            foreach(StudentInformation s in students)
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", authHeaderValue);
+                HttpResponseMessage response = await _httpClient.GetAsync(_baseUrl + "/api/StudentAttendance/Presence/" + courseId + "/" + s.Index);
+                response.EnsureSuccessStatusCode();
+                StudentAttendancePresenceInfoDto? info = await response.Content.ReadFromJsonAsync<StudentAttendancePresenceInfoDto>();
+                if(info.AttendancePercentage >= 50.0)
+                {
+                    totalStudentPresent++;
+                }
+            }
+            
+            double percentageOfStudents = ((double)totalStudentPresent / (double)totalStudentsCount) * 100.0;
+
+            AllStudentAttendancePresenceInfoDto presenceInfoDto = new AllStudentAttendancePresenceInfoDto
+            {
+                TotalNeededLectures = totalNeededLectures,
+                TotalTakenLectures = totalTakenLectures,
+                TotalStudentsForCourse = totalStudentsCount,
+                TotalPresentStudentsForCourse = totalStudentPresent,
+                PercentageOfStudents = Math.Round(percentageOfStudents, 2) 
+            };
+
+            return Ok(presenceInfoDto);
+        }
+
         /// <summary>
         /// Creates student registration to lecture.
         /// </summary>
