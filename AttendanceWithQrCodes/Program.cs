@@ -12,7 +12,18 @@ using System.Reflection;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var _policy = "policy";
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: _policy,
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .SetIsOriginAllowedToAllowWildcardSubdomains();
+        });
+});
 builder.Services.AddDbContext<Context>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DatabaseConnection")));
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
@@ -97,6 +108,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors(_policy);
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

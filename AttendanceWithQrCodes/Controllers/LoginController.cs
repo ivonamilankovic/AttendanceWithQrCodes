@@ -5,6 +5,7 @@ using AttendanceWithQrCodes.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using System.Net.Mime;
 
 namespace AttendanceWithQrCodes.Controllers
@@ -48,7 +49,9 @@ namespace AttendanceWithQrCodes.Controllers
             }
 
             string token = _jwtHelper.GenerateLoginToken(user);
-            return Ok(token);
+            JObject jsonObject = new JObject();
+            jsonObject["Token"] = token;
+            return Ok(jsonObject);
         }
 
         /// <summary>
