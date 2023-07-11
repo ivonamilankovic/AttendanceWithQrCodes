@@ -60,12 +60,19 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="token"></param>
         /// <returns>User</returns>
         [HttpGet("Validate")]
-        [Authorize]
+        [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> ValidateToken(string token)
         {
-            int userId = _jwtHelper.ValidateLoginToken(token);
+            int userId = 0;
+            try
+            {
+                userId = _jwtHelper.ValidateLoginToken(token);
+            }catch(Exception e) 
+            { 
+                return NoContent();
+            }
 
             User? user = await _context.Users.Include(u => u.Role)
                         .SingleOrDefaultAsync(x => x.Id == userId);
