@@ -127,7 +127,7 @@ namespace AttendanceWithQrCodes.Controllers
             {
                 workbook.SaveAs(ms);
                 byte[] content = ms.ToArray();
-                string fileName = "StudentAttendances-" + Guid.NewGuid() + ".xlsx";
+                string fileName = "StudentAttendances.xlsx";
 
                 return File(
                     content,

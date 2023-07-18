@@ -2,8 +2,10 @@
 {
     public class StudentAttendanceListDto
     {
+        public int Id { get; set; }
         public DateTime Date { get; set; }
         public bool Present { get; set; } = default!;
+        public string? Notes { get; set; } = default!;
         public StudentInfoAttendanceDetailsDto Student { get; set; } = default!;
         public LectureAttendanceDetailsDto Lecture { get; set; } = default!;
     }

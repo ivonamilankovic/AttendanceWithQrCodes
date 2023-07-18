@@ -58,6 +58,15 @@ namespace AttendanceWithQrCodes.Controllers
 
             foreach(Course course in courses)
             {
+                course.CourseLanguages = await _context.CoursesLanguages
+                                   .Include(cl => cl.StudyLanguage)
+                                   .Where(cl => cl.CourseId == course.Id)
+                                   .ToArrayAsync();
+                course.CourseStudyProfiles = await _context.CoursesStudyProfiles
+                                    .Include(cp => cp.StudyProfile)
+                                    .Where(cp => cp.CourseId == course.Id)
+                                    .ToArrayAsync();
+
                 bool anyRequired = languageId != 0 || profileId != 0;
 
                 if (anyRequired)
@@ -97,7 +106,7 @@ namespace AttendanceWithQrCodes.Controllers
             }
 
             filteredCourses = filteredCourses.Distinct().ToList();
-            IList<CourseListDto> courseList = _mapper.Map<IList<Course>, IList<CourseListDto>>(filteredCourses);
+            IList<CourseDetailsDto> courseList = _mapper.Map<IList<Course>, IList<CourseDetailsDto>>(filteredCourses);
             if (!courseList.Any())
             {
                 return NoContent();

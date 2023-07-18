@@ -31,7 +31,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Authorize(Roles = AdminRole)]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll()
