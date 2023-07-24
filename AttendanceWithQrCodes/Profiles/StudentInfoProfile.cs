@@ -24,6 +24,12 @@ namespace AttendanceWithQrCodes.Profiles
                     src => src.MapFrom(s => s.User))
                 .ReverseMap();
             CreateMap<StudentInformation, StudentInfoAttendanceDetailsDto>()
+                 .ForPath(
+                    dest => dest.StudyProfile.ProfileName,
+                    src => src.MapFrom(s => s.StudyProfile.Name))
+                .ForPath(
+                    dest => dest.StudyLanguage.LanguageName,
+                    src => src.MapFrom(s => s.StudyLanguage.Name))
                 .ReverseMap();
         }
     }

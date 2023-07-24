@@ -217,6 +217,7 @@ namespace AttendanceWithQrCodes.Controllers
 
             IList<StudentInformation> students = await _context.StudentInformations.ToListAsync();
             int totalStudentsCount = 0;
+            IList<StudentInformation> studs = new List<StudentInformation>();
             foreach(StudentInformation s in students)
             {
                 bool profileMatch = profiles.Any(cp => cp.StudyProfileId == s.StudyProfileId);
@@ -224,16 +225,13 @@ namespace AttendanceWithQrCodes.Controllers
                 if(profileMatch && languageMatch)
                 {
                     totalStudentsCount++;
-                }
-                else
-                {
-                    students.Remove(s);
+                    studs.Add(s);
                 }
             }
 
             string authHeaderValue = _fetchAuthHeader.FetchAuthorizationHeaderValue(Request);
             int totalStudentPresent = 0;
-            foreach(StudentInformation s in students)
+            foreach(StudentInformation s in studs)
             {
                 _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("bearer", authHeaderValue);
                 HttpResponseMessage response = await _httpClient.GetAsync(_baseUrl + "/api/StudentAttendance/Presence/" + courseId + "/" + s.Index);

@@ -1,4 +1,6 @@
-﻿namespace AttendanceWithQrCodes.Models.DTOs
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace AttendanceWithQrCodes.Models.DTOs
 {
     public class StudentAttendanceListDto
     {
@@ -14,6 +16,8 @@
     {
         public int Index { get; set; } = default!;
         public UserNameEmailDto User { get; set; } = default!;
+        public StudyProfileDto? StudyProfile { get; set; }
+        public StudyLanguageDto? StudyLanguage { get; set; }
     }
     public class LectureAttendanceDetailsDto
     {
