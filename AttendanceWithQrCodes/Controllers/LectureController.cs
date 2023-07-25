@@ -9,7 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Net.Mime;
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Authorization;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace AttendanceWithQrCodes.Controllers
 {
@@ -80,6 +82,30 @@ namespace AttendanceWithQrCodes.Controllers
 
            LectureDetailsDto lectureDetailsDto = _mapper.Map<Lecture, LectureDetailsDto>(lecture);
             return Ok(lectureDetailsDto);
+        }
+
+        /// <summary>
+        /// Returns picture od qr code for lecture.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("QrCode/{id}")]
+        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<FileContentResult> GetQrCodeById(int id)
+        {
+            Lecture? lecture = await _context.Lectures.Include(l => l.QrCode).FirstOrDefaultAsync(l => l.Id == id);
+
+            string qrCodeImgName = lecture.QrCode.ImageName;
+            string domian = AppDomain.CurrentDomain.BaseDirectory;
+            string[] domianParts = domian.Split("bin");
+            string path = String.Concat(domianParts[0], "QrCode\\codes\\" + qrCodeImgName);
+
+            MemoryStream stream = new MemoryStream(System.IO.File.ReadAllBytes(path));
+            byte[] content = stream.ToArray();
+
+            return File( content, "image/png", qrCodeImgName);
         }
 
         /// <summary>
