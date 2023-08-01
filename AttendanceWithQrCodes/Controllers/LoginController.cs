@@ -81,6 +81,17 @@ namespace AttendanceWithQrCodes.Controllers
                 return BadRequest("Invalid token.");
             }
 
+            if(user.Role.Name == RoleConstants.StudentRole)
+            {
+                StudentInformation? student = await _context.StudentInformations.Include(s => s.User)
+                    .Include(s => s.StudyLanguage).Include(s=>s.StudyProfile)
+                    .SingleOrDefaultAsync(s => s.UserId == userId);
+                if (student != null)
+                {
+                    return Ok(student);
+                }
+            }
+
             return Ok(user);
         }
 

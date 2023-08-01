@@ -47,7 +47,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="languageId"></param>
         /// <returns></returns>
         [HttpGet]
-        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> GetAll(int lectureId, int studentIndex, int courseId, int lecturerId, int profileId, int languageId)
