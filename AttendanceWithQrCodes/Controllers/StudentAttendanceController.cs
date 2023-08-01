@@ -160,7 +160,8 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound("Course doesn't exist.");
             }
 
-            int totalNeededLectures = course.LecturesNumForProfessor + (int)course.LecturesNumForAssistent;
+            int assistLec = (course.LecturesNumForAssistent != null) ? (int)course.LecturesNumForAssistent : 0;
+            int totalNeededLectures = course.LecturesNumForProfessor + assistLec;
             int totalTakenLectures = course.TotalTakenLectures;
 
             IList<StudentAttendance> attendances = await FetchAllAttendances(courseId: courseId, studentIndex: studentIndex);
@@ -212,7 +213,8 @@ namespace AttendanceWithQrCodes.Controllers
                                 .Where(cp => cp.CourseId == course.Id)
                                 .ToArrayAsync();
 
-            int totalNeededLectures = course.LecturesNumForProfessor + (int)course.LecturesNumForAssistent;
+            int assistLec = (course.LecturesNumForAssistent != null) ? (int)course.LecturesNumForAssistent : 0;
+            int totalNeededLectures = course.LecturesNumForProfessor + assistLec;
             int totalTakenLectures = course.TotalTakenLectures;
 
             IList<StudentInformation> students = await _context.StudentInformations.ToListAsync();
