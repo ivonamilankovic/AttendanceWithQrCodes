@@ -21,6 +21,7 @@ builder.Services.AddCors(options =>
             policy.AllowAnyOrigin()
             .AllowAnyHeader()
             .AllowAnyMethod()
+            .WithHeaders("Content-Range")
             .SetIsOriginAllowedToAllowWildcardSubdomains();
         });
 });
@@ -109,6 +110,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors(_policy);
+app.UseCorsExposeHeadersMiddleware();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
