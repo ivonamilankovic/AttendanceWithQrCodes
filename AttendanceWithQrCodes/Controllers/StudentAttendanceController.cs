@@ -238,7 +238,7 @@ namespace AttendanceWithQrCodes.Controllers
                 HttpResponseMessage response = await _httpClient.GetAsync(_baseUrl + "/api/StudentAttendance/Presence/" + courseId + "/" + s.Index);
                 response.EnsureSuccessStatusCode();
                 StudentAttendancePresenceInfoDto? info = await response.Content.ReadFromJsonAsync<StudentAttendancePresenceInfoDto>();
-                if(info.AttendancePercentage >= 50.0)
+                if(info.AttendancePercentage >= 30.0)
                 {
                     totalStudentPresent++;
                 }
