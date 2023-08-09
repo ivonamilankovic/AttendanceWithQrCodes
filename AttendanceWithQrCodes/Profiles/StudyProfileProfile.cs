@@ -9,9 +9,6 @@ namespace AttendanceWithQrCodes.Profiles
         public StudyProfileProfile() 
         {
             CreateMap<StudyProfile, StudyProfileDto>()
-                .ForMember( 
-                    dest => dest.ProfileName,
-                    src => src.MapFrom(s => s.Name))
                 .ReverseMap();
         }
     }

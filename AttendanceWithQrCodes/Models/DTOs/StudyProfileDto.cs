@@ -2,6 +2,6 @@
 {
     public class StudyProfileDto
     {
-        public string ProfileName { get; set; } = default!;
+        public string Name { get; set; } = default!;
     }
 }

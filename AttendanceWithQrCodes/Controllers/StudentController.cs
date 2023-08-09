@@ -15,7 +15,6 @@ namespace AttendanceWithQrCodes.Controllers
 {
     [Route("api/[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
-    [Consumes(MediaTypeNames.Application.Json)]
     [ApiController]
     public class StudentController : ControllerBase
     {
@@ -93,6 +92,7 @@ namespace AttendanceWithQrCodes.Controllers
         [Authorize(Roles = AdminRole + "," + StudentRole + "," + DefaultRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Create(StudentInfoCreateDto studentDto)
         {
             if (studentDto == null)
@@ -155,6 +155,7 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Update(int index, StudentInfoUpdateDto studentDto)
         {
             StudentInformation? student = await _context.StudentInformations

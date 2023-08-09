@@ -11,7 +11,7 @@
 
         public Task Invoke(HttpContext httpContext)
         {
-            httpContext.Response.Headers.Add("Content-Range", "posts 0-20/*");
+            httpContext.Response.Headers.Add("Content-Range", "posts 0-10/1000");
             httpContext.Response.Headers.Add("Access-Control-Expose-Headers", "Content-Range");
              return _next(httpContext);
         }

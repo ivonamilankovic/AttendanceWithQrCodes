@@ -9,9 +9,6 @@ namespace AttendanceWithQrCodes.Profiles
         public StudyLanguageProfile() 
         {
             CreateMap<StudyLanguage, StudyLanguageDto>()
-                .ForMember(
-                    dest => dest.LanguageName,
-                    src => src.MapFrom(s => s.Name))
                 .ReverseMap();
         }
     }

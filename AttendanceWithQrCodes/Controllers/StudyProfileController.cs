@@ -13,7 +13,6 @@ namespace AttendanceWithQrCodes.Controllers
 {
     [Route("api/[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
-    [Consumes(MediaTypeNames.Application.Json)]
     [ApiController]
     public class StudyProfileController : ControllerBase
     {
@@ -61,8 +60,7 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound();
             }
 
-            StudyProfileDto profileDto = _mapper.Map<StudyProfile, StudyProfileDto>(profile);
-            return Ok(profileDto);
+            return Ok(profile);
         }
 
         /// <summary>
@@ -74,14 +72,15 @@ namespace AttendanceWithQrCodes.Controllers
         [Authorize(Roles = AdminRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Create(StudyProfileDto profileDto)
         {
-            if (profileDto.ProfileName.IsNullOrEmpty())
+            if (profileDto.Name.IsNullOrEmpty())
             {
                 return BadRequest();
             }
 
-            bool profileExists = await _context.StudyProfiles.AnyAsync(p => p.Name == profileDto.ProfileName);
+            bool profileExists = await _context.StudyProfiles.AnyAsync(p => p.Name == profileDto.Name);
             if (profileExists)
             {
                 return BadRequest("Profile already exists!");
@@ -105,14 +104,15 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Update(int id, StudyProfileDto profileDto)
         {
-            if (profileDto.ProfileName.IsNullOrEmpty())
+            if (profileDto.Name.IsNullOrEmpty())
             {
                 return BadRequest();
             }
 
-            bool profileExists = await _context.StudyProfiles.AnyAsync(p => p.Name == profileDto.ProfileName && p.Id != id);
+            bool profileExists = await _context.StudyProfiles.AnyAsync(p => p.Name == profileDto.Name && p.Id != id);
             if (profileExists)
             {
                 return BadRequest("Profile already exists!");

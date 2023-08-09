@@ -16,7 +16,6 @@ namespace AttendanceWithQrCodes.Controllers
 {
     [Route("api/[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
-    [Consumes(MediaTypeNames.Application.Json)]
     [ApiController]
     public class StudentAttendanceController : ControllerBase
     {
@@ -269,6 +268,7 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Create(StudentAttendanceCreateDto attendanceDto)
         {
             if (attendanceDto == null)
@@ -373,6 +373,7 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> UpdateNotes(int id, int studentIndex, StudentAttendanceNotesDto notesDto)
         {
             StudentAttendance? attendance = await _context.StudentAttendances.SingleOrDefaultAsync(a => a.Id == id && a.StudentIndex == studentIndex);
@@ -423,7 +424,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="profileId"></param>
         /// <param name="languageId"></param>
         /// <returns>List of StudentAttendance objects.</returns>
-        public async Task<IList<StudentAttendance>> FetchAllAttendances(int lectureId = 0, int courseId = 0, int lecturerId = 0, int profileId = 0, int languageId = 0, int studentIndex = 0)
+        private async Task<IList<StudentAttendance>> FetchAllAttendances(int lectureId = 0, int courseId = 0, int lecturerId = 0, int profileId = 0, int languageId = 0, int studentIndex = 0)
         {
             IList<StudentAttendance> attendances = await _context.StudentAttendances
                                     .Include(a => a.Student)

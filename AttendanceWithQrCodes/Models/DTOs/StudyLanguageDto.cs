@@ -2,6 +2,6 @@
 {
     public class StudyLanguageDto
     {
-        public string LanguageName { get; set; } = default!;
+        public string Name { get; set; } = default!;
     }
 }

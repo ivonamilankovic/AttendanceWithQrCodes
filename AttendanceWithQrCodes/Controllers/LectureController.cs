@@ -17,7 +17,6 @@ namespace AttendanceWithQrCodes.Controllers
 {
     [Route("api/[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
-    [Consumes(MediaTypeNames.Application.Json)]
     [ApiController]
     public class LectureController : ControllerBase
     {
@@ -118,6 +117,7 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Create(LectureCreateDto lectureDto)
         {
             if(lectureDto == null)
@@ -202,6 +202,7 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Update(int id, LectureUpdateDto lectureDto )
         {
             if (lectureDto == null)

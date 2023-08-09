@@ -14,7 +14,6 @@ namespace AttendanceWithQrCodes.Controllers
 {
     [Route("api/[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
-    [Consumes(MediaTypeNames.Application.Json)]
     [ApiController]
     public class UserController : ControllerBase
     {
@@ -76,6 +75,7 @@ namespace AttendanceWithQrCodes.Controllers
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Create(UserCreateDto userDto)
         {
             if(userDto == null)
@@ -110,6 +110,7 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Update(UserUpdateDto userDto, int id)
         {
             User? user = await _context.Users.Include(u => u.Role).SingleOrDefaultAsync(u => u.Id == id);
@@ -147,6 +148,7 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> ChangePassword(UserChangePasswordDto userDto, int id)
         {
             User? user = await _context.Users.SingleOrDefaultAsync(u => u.Id == id);

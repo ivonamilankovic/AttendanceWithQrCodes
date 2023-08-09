@@ -13,7 +13,6 @@ namespace AttendanceWithQrCodes.Controllers
 {
     [Route("api/[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
-    [Consumes(MediaTypeNames.Application.Json)]
     [ApiController]
     public class StudyLanguageController : ControllerBase
     {
@@ -61,8 +60,7 @@ namespace AttendanceWithQrCodes.Controllers
                 return NotFound();
             }
 
-            StudyLanguageDto langDto = _mapper.Map<StudyLanguage, StudyLanguageDto>(lang);
-            return Ok(langDto);
+            return Ok(lang);
         }
 
         /// <summary>
@@ -74,14 +72,15 @@ namespace AttendanceWithQrCodes.Controllers
         [Authorize(Roles = AdminRole)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Create(StudyLanguageDto langDto)
         {
-            if (langDto.LanguageName.IsNullOrEmpty())
+            if (langDto.Name.IsNullOrEmpty())
             {
                 return BadRequest();
             }
 
-            bool langExists = await _context.StudyLanguages.AnyAsync(l => l.Name == langDto.LanguageName);
+            bool langExists = await _context.StudyLanguages.AnyAsync(l => l.Name == langDto.Name);
             if (langExists)
             {
                 return BadRequest("Language already exists!");
@@ -105,14 +104,15 @@ namespace AttendanceWithQrCodes.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Consumes(MediaTypeNames.Application.Json)]
         public async Task<IActionResult> Update(int id, StudyLanguageDto langDto)
         {
-            if (langDto.LanguageName.IsNullOrEmpty())
+            if (langDto.Name.IsNullOrEmpty())
             {
                 return BadRequest();
             }
 
-            bool langExists = await _context.StudyLanguages.AnyAsync(l => l.Name == langDto.LanguageName && l.Id != id);
+            bool langExists = await _context.StudyLanguages.AnyAsync(l => l.Name == langDto.Name && l.Id != id);
             if (langExists)
             {
                 return BadRequest("Language already exists!");
