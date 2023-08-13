@@ -142,7 +142,7 @@ namespace AttendanceWithQrCodes.Controllers
         /// <param name="studentIndex"></param>
         /// <returns></returns>
         [HttpGet("Presence/{courseId}/{studentIndex}")]
-        [Authorize(Roles = AdminRole + "," + ProfessorRole + "," + AssistantRole)]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCalculatedPresenceOneStudent(int courseId, int studentIndex)
